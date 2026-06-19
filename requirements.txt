@@ -1,0 +1,34 @@
+# Core
+numpy>=1.26
+scipy>=1.11
+pandas>=2.1
+matplotlib>=3.8
+tqdm>=4.66
+pillow>=10.0
+
+# Computer vision
+opencv-python>=4.9
+scikit-image>=0.22
+scikit-learn>=1.4
+
+# Circular statistics
+# (we implement our own wrapped-distance helpers in src/metrics_circular.py;
+#  astropy provides cross-check implementations of circular stats)
+astropy>=6.0
+
+# Deep learning (GPU build installed separately if needed: torch==2.5.1+cu121)
+torch>=2.2
+torchvision>=0.17
+timm>=0.9            # backbones (EfficientNet/MobileNet/ResNet/ViT/DINOv2)
+open_clip_torch>=2.24  # BioCLIP / CLIP negative-control only
+
+# Tracking
+filterpy>=1.4.5     # Kalman filter for SORT-style tracking
+
+# Data access (fallback re-download)
+roboflow>=1.1
+python-dotenv>=1.0
+
+# Dev
+pytest>=8.0
+jupyter>=1.0
