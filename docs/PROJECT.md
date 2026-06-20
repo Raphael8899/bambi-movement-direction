@@ -25,6 +25,7 @@ and cross-check with tracking + drone data. Proposal feared 20-40 px crops and n
 - Roboflow `bambi-overview/bambi-alfs-20250520-upload04-sdakr` v2, already downloaded at
   `C:\Users\rapha\AutoCode\bambi-analysis\data\bambi-dataset` (YOLO format) - reuse, don't re-download.
 - 2048x2048 thermal AOS integrals; 12,655 image files (12,514 with >=1 box); 46,046 boxes; 221 flights
+  with boxes (223 distinct flight ids total)
   x ~65 frames. Crops are median 65 px (NOT 20-40 as feared). 67% of images have >1 animal.
 - Classes are stored only as ids **0/1/2** (data.yaml names them '2','3','4'). The names
   Rotwild/Rehwild/Schwarzwild are NOT in the dataset - the id->species map is an unverified
@@ -46,10 +47,15 @@ machine via the standalone package; species shown as class id, not a guessed nam
 
 ## 5. What is actually true so far (label-free; full detail in results.md, caveats in audit.md)
 - **Tracking works.** It recovers genuine movement direction for clearly-moving animals (verified
-  visually on real frames AND by refuting the drone-artefact hypothesis; signal/noise ~290x). The
-  gate yields 190 "trusted", but it is lenient - the **defensible high-confidence core is 138**
-  (>=8 steps, >=50 px). Caveat: an ID-switch confound for the 18 trusted tracklets with >1000 px in
-  crowded flights (the tracker has no appearance model).
+  visually on real frames AND by refuting the drone-artefact hypothesis: consecutive registration
+  removes ~800 px of cumulative drone motion and leaves a coherent residual, background cancels in
+  the per-step difference images; honest signal/noise ~30-40x at the net level, ~3x per step - the
+  earlier "~290x" was a unit error, see audit.md). The gate yields 190 "trusted", but it is lenient -
+  the **defensible high-confidence core is 138** (>=8 steps, >=50 px). Caveat: an ID-switch confound
+  across the whole trusted/core set, which lives almost entirely in crowded scenes (median ~7-8
+  same-class animals/frame; only ~3% are single-animal tracks). The tracker has no appearance model,
+  so the R/Rayleigh coherence gate is the only switch defense - not just an issue for the 18 >1000 px
+  tracklets, and the visual ego-motion check used an atypical single-animal flight.
 - **Single-image direction is weak.** GST is the best single-image estimator (~29 deg median axial
   error) but barely beats - and on the most common class loses to - a constant per-class-heading
   prior. Not a substitute for tracking.

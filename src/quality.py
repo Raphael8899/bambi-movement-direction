@@ -84,6 +84,6 @@ def ghosting_score(gray: np.ndarray) -> float:
     return float(ring + 0.5 * streak)
 
 
-def is_ghosted(gray: np.ndarray, thr: float = 2.0) -> bool:
-    """True if the ghosting score is at or above thr."""
+def is_ghosted(gray: np.ndarray, thr: float = 1.5) -> bool:
+    """True if the ghosting score is at or above thr (matches the scan's default)."""
     return ghosting_score(gray) >= thr

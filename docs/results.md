@@ -7,7 +7,7 @@ improved tracking output (190 directions); the earlier 164-direction run is kept
 
 ## Dataset (measured)
 - 2048x2048 thermal AOS integrals; 12,655 image files (12,514 with >=1 box), 46,046 boxes;
-  classes 0/1/2 with 21,787 / 17,403 / 6,856 boxes; 221 flights x ~65 frames.
+  classes 0/1/2 with 21,787 / 17,403 / 6,856 boxes; 221 flights with boxes (223 distinct flight ids total) x ~65 frames.
 - Animal crops: median longest side 65 px. 67% of images contain more than one animal (mean 3.7).
 - The dataset only stores a class id (0/1/2); the species names are not in it (confirm the
   id->species mapping with the BAMBI team).
@@ -24,25 +24,28 @@ How oversized the manual boxes are (refined warm-blob area / manual box area) an
 - Class 0 boxes are oversized (refined/box 0.81); class 1 boxes are tight (1.15 - the smallest
   animals fill their box). The class-2 (boar) value 0.37 is NOT loose boxes but a SEGMENTATION
   FAILURE: boars are the coolest, lowest-contrast class, so the warm-blob segmenter grabs only
-  their core (blob ~5% of the crop). See [audit.md](audit.md).
+  their core (blob ~7% of the crop, vs ~13-20% for classes 0/1). See [audit.md](audit.md).
 - Class 2 is the coolest / darkest class (median intensity 79 vs 102 / 116).
-- A border-ghosting heuristic (`src/quality.py`) flags ~0.9% of frames at its default
-  threshold; the top-scoring ones are real AOS sheared-border artefacts on inspection. It is a
+- A border-ghosting heuristic (`src/quality.py`) flags ~0.9% of frames at the scan's default
+  threshold (1.5); the top-scoring ones are real AOS sheared-border artefacts on inspection. It is a
   tunable triage heuristic, not a validated detector.
 
 ## Tracking-derived movement direction (the objective ground truth)
 Pipeline (`src/registration.py` with CLAHE + Lowe ratio test, `src/tracking.py`,
 `src/direction.py`, `scripts/run_tracking.py`): register consecutive frames on the background
-(ORB + RANSAC affine) to cancel drone ego-motion, take the animal's residual displacement, and
+(ORB + RANSAC partial-affine / similarity) to cancel drone ego-motion, take the animal's residual displacement, and
 aggregate per tracklet into a heading with a confidence (resultant length R + Rayleigh test).
 
 - Over all flights: 2,697 tracklets; **190 pass the trusted gate** (83 / 68 / 39 by class), but
   the gate is lenient - ~42 are weak (<=6 steps with trivially-high R, or <50 px displacement
   that could be drift). The **defensible high-confidence core is 138** (>=8 steps and >=50 px;
   58/49/31). Median registration inlier ratio 0.86.
-- Caution: 75% of frames have >1 same-class animal and the tracker has no appearance model, so
-  the 18 trusted tracklets with >1000 px displacement could be ID-switches, not one animal. See
-  [audit.md](audit.md).
+- Caution (ID-switch): ~67% of frames have >1 same-class animal (91% of detections share a
+  same-class sibling) and the tracker has no appearance model. The trusted set is almost entirely
+  in crowded scenes - the median trusted tracklet sits among ~7-8 same-class animals/frame and only
+  ~3% are single-animal tracks - so a coherent switch chain could mimic a heading across the whole
+  core, not only the 18 tracklets with >1000 px displacement. The R/Rayleigh gate is the only
+  defense; the visual ego-motion check used an atypical single-animal flight. See [audit.md](audit.md).
 - Most animals are stationary -> no coherent heading -> correctly rejected. The movers are
   clear (median net displacement ~300 px, R ~0.66, ~11 steps).
 - Better registration (CLAHE + ratio test) raised the yield from 164 to 190 (+16%) and the

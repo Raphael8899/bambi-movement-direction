@@ -10,7 +10,7 @@
 ## Status updates (2026-06-19)
 After Andreas trialled the annotation tool, two things changed from the original plan:
 - **Ground truth for direction now comes from tracking, not hand-labelling.** Hand-labelling
-  direction proved unreliable (57% of crops have more than one animal; most animals are faint or
+  direction proved unreliable (67% of crops have more than one animal; most animals are faint or
   compact and the head is not visible; there is no truth a human can verify). Tracking the animal
   across a flight's frames, after removing drone ego-motion, gives an objective heading (validated on
   flight 98: per-step resultant R=0.86, Rayleigh-significant). Human labels become a small validation
@@ -30,12 +30,12 @@ After Andreas trialled the annotation tool, two things changed from the original
 
 ## Empirical ground truth about the data (verified, not assumed)
 - Roboflow `bambi-overview/bambi-alfs-20250520-upload04-sdakr` v2; **2048×2048**; **12,655 imgs / 46,046 boxes**
-  (Rotwild 21,787 / Rehwild 17,403 / Schwarzwild 6,856); **223 flights × ~65 frames**.
+  (Rotwild 21,787 / Rehwild 17,403 / Schwarzwild 6,856); **223 flight ids (221 with boxes) × ~65 frames**.
 - Crop longest-side **median 65 px** (only 2.6 % < 32 px) → orientation feasible (proposal's "20–40 px" was wrong).
 - **94 %** of warm blobs have a clear elongation axis → body/blur **axis (mod 180°)** recoverable even classically.
 - **No drone GPS/pose metadata** in the export → ego-motion must be image-based; proposal's "combine with GPS" dropped.
-- Cross-frame displacement is dominated by **drone survey ego-motion** (rectangular trajectories) → tracking is a
-  registration problem, demoted to a **cross-check**, not primary GT.
+- Cross-frame displacement is dominated by **drone survey ego-motion** (rectangular trajectories) → tracking needs
+  frame-to-frame registration; after the pivot above this registered tracking became the **primary direction GT**.
 - AOS integration registers source frames to the ground plane → within one image the **blur is ground-relative**
   (the cleanest moving-animal signal). [Bimber/Schedl/Kurmi AOS lit.]
 - Existing `bambi-analysis` repo: movement labels are **unvalidated** sharpness clustering (confounded by background
