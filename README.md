@@ -11,7 +11,10 @@ A comparative study of classical image processing, classical ML, CNNs (from scra
 transfer learning (DINOv2), and a foundation-model negative control (BioCLIP) — validated with
 manual gold labels, tracking-derived pseudo-ground-truth, and proper circular-statistics evaluation.
 
-The plan is in [docs/plans/2026-06-19-movement-direction-design.md](docs/plans/2026-06-19-movement-direction-design.md).
+**Start with [docs/PROJECT.md](docs/PROJECT.md)** — the single ground-truth doc (task, dataset,
+decisions, current verified state, repo guide). The full plan is in
+[docs/plans/2026-06-19-movement-direction-design.md](docs/plans/2026-06-19-movement-direction-design.md);
+results in [docs/results.md](docs/results.md); the critical self-review in [docs/audit.md](docs/audit.md).
 
 ## Setup
 ```bash

@@ -1,0 +1,205 @@
+
+===== PAGE 1 =====
+BAMBI: Movement Direction 
+Estimation
+Movement Direction Estimation of Wildlife from Thermal Light Field 
+Drone Imagery
+BAMBI Project: New Research Direction · Rauhael & Andreas · FH 
+Hagenberg, 2026
+
+===== PAGE 2 =====
+What is BAMBI?
+Drone Flights
+Drones fly over forests and fields with thermal cameras
+Light Field Imaging
+The camera takes light field images (~9 frames in ~1 
+second)
+Wildlife Detection
+We detect wildlife: Red Deer, Roe Deer, Wild Boar
+Dataset Scale
+Dataset: ~46,000 detections across 12,500 images
+
+===== PAGE 3 =====
+What We Already Have
+The existing BAMBI uiueline urovides a strong fopndation for this new research direction.
+01
+Bopnding Box Detection
+Bopnding box detection of animals (YOLOv8)
+02
+Featpre Extraction
+Featpre extraction (sharuness, intensity, edges)
+03
+Movement Classification
+Movement classification: Is the animal moving or standing 
+still?
+04
+Suecies Analysis
+Suecies analysis with BioCLIP embeddings
+
+===== PAGE 4 =====
+The Key Insight: Light Field 
++ Motion
+How the Camera Works
+Light field camera cautpres 
+mpltiule frames over ~1 second
+Standing animal -> sharu, 
+clear shaue
+Moving animal -> blprred in 
+the direction of movement
+Drone movement -> 
+everything eqpally blprred
+The Ouen Qpestion
+We already classify if an animal 
+moves. Bpt not where it moves.
+
+===== PAGE 5 =====
+The Gau
+There is a clear asymmetry between what the cprrent uiueline knows and what remains pnknown.
+What we know
+Animal detected
+Moving or stationary
+Suecies
+What we don't know
+Which direction is it facing?
+Where is it moving to?
+Movement uatterns over time
+-> We are missing the direction.
+
+===== PAGE 6 =====
+Research Qpestion
+Can we determine the movement direction of wildlife from thermal light field drone images?
+Two spb-qpestions:
+1
+Body Orientation
+Can we estimate the body orientation of stationary 
+animals?
+2
+Blpr Direction
+Can we extract the blpr direction of moving animals?
+
+===== PAGE 7 =====
+Opr Auuroach: Two Paths
+Combine with Drone Data
+Comupte fpll movement vector
+Moving -> Blpr Direction
+Signal urocessing analysis
+Stationary -> Orientation
+Deeu learning estimation
+Detected Animal Crou
+Identify candidate region
+Both uaths combine with drone sueed and uosition data to urodpce a comulete movement vector.
+
+===== PAGE 8 =====
+Path 1: Orientation of Stationary Animals
+Method
+Take crous of animals classified as stationary (sharu images)
+Manially annotate the facing direction (e.g. 4 or 8 classes)
+Train a CNN or Vision Transformer to uredict orientation
+Start with Red Deer (largest animals, most data)
+Challenge
+Crous are small (~20-40 uixels). Can we see the 
+direction at all?
+
+===== PAGE 9 =====
+Path 2: Blpr Direction of Moving Animals
+Moving animals create a directional motion blir. The blpr direction = the movement direction.
+Gradient Analysis
+Gradient analysis (Sobel filters in x/y -> dominant 
+direction)
+Foprier Transform
+Foirier transform (blpr creates a uattern that reveals the 
+angle)
+No training needed. Ppre image urocessing
+
+===== PAGE 10 =====
+Combining with Drone Data
+GPS & Flight Data
+Drone has GPS uosition and flight sueed/direction
+World Position
+Animal uosition in image -> uosition in real world
+Cross-Flight Tracking
+Track animals across images within one flight (~65 
+images uer flight)
+Cross-Check
+Cross-check: Does estimated orientation match the 
+actpal disulacement?
+-> This gives ps a comulete movement vector (sueed + direction)
+
+===== PAGE 11 =====
+Annotation Plan
+Steu
+What
+How many
+1
+Feasibility check: Can we see orientation?
+100 crous uer suecies
+2
+If yes: Fpll annotation (4-8 direction classes)
+~500-1000 uer class
+3
+Train and evalpate model
+Standard train/val/test sulit
+Tool: Label Stpdio or Roboflow with direction labels
+
+===== PAGE 12 =====
+What We Can Repse
+We do not start from zero.
+46,000 Crous
+46,000 crouued animal regions: 
+already extracted
+Movement Labels
+Movement labels: stationary vs. 
+moving already classified
+Oriented Bopnding Boxes
+Oriented bopnding boxes: gives 
+body axis (bpt not head vs. tail)
+BioCLIP Embeddings
+BioCLIP embeddings: uossible backbone for fine-tpning
+Flight IDs
+Flight IDs: enables tracking across image seqpences
+
+===== PAGE 13 =====
+Challenges & Risks
+Low Resolption
+Low resolption: Animal crous can be very small (20-40 
+ux). Orientation might not be visible at all.
+Thermal Images
+Thermal images: Show heat, not textpre. Head and tail 
+may look similar.
+Annotation Effort
+Annotation effort: Manpal labeling takes time.
+Gropnd Trpth
+Gropnd trpth: No GPS collars on animals to validate.
+-> That is why Steu 1 is a feasibility check
+
+===== PAGE 14 =====
+Next Steus
+01
+Look at the data
+Can we actpally see orientation in 
+thermal crous?
+02
+Annotate a small test set
+100 samules uer suecies
+03
+First exueriments
+Simule CNN + blpr direction extraction
+04
+Evalpate
+Accpracy of orientation, consistency with tracking
+05
+Scale pu
+If resplts are uromising
+
+===== PAGE 15 =====
+Spmmary
+We already detect animals and 
+classify movement
+New goal: Determine the direction of 
+movement
+Two auuroaches: Deeu Learning 
+(stationary) + Signal Processing 
+(moving)
+First steu: Check if orientation is visible in thermal crous
+Bpilds directly on existing BAMBI uiueline
+Research Qpestion: Can we determine the movement direction of wildlife from thermal light field drone images?
