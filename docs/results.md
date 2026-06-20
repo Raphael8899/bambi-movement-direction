@@ -6,8 +6,8 @@ improved tracking output (190 directions); the earlier 164-direction run is kept
 `output/tracking_directions_v1.csv`.
 
 ## Dataset (measured)
-- 2048x2048 thermal AOS integrals; 12,655 images, 46,046 boxes; classes 0/1/2 with
-  21,787 / 17,403 / 6,856 boxes; 223 flights x ~65 frames.
+- 2048x2048 thermal AOS integrals; 12,655 image files (12,514 with >=1 box), 46,046 boxes;
+  classes 0/1/2 with 21,787 / 17,403 / 6,856 boxes; 221 flights x ~65 frames.
 - Animal crops: median longest side 65 px. 67% of images contain more than one animal (mean 3.7).
 - The dataset only stores a class id (0/1/2); the species names are not in it (confirm the
   id->species mapping with the BAMBI team).
@@ -21,8 +21,10 @@ How oversized the manual boxes are (refined warm-blob area / manual box area) an
 | 1 | 17,403 | 61 | 1.15 | 116 |
 | 2 |  6,856 | 61 | 0.37 |  79 |
 
-- Manual boxes are most oversized for class 2 (refined area ~37% of the box) and class 0
-  (0.81); class 1 boxes are already tight (1.15 - the smallest animals fill their box).
+- Class 0 boxes are oversized (refined/box 0.81); class 1 boxes are tight (1.15 - the smallest
+  animals fill their box). The class-2 (boar) value 0.37 is NOT loose boxes but a SEGMENTATION
+  FAILURE: boars are the coolest, lowest-contrast class, so the warm-blob segmenter grabs only
+  their core (blob ~5% of the crop). See [audit.md](audit.md).
 - Class 2 is the coolest / darkest class (median intensity 79 vs 102 / 116).
 - A border-ghosting heuristic (`src/quality.py`) flags ~0.9% of frames at its default
   threshold; the top-scoring ones are real AOS sheared-border artefacts on inspection. It is a
@@ -34,8 +36,13 @@ Pipeline (`src/registration.py` with CLAHE + Lowe ratio test, `src/tracking.py`,
 (ORB + RANSAC affine) to cancel drone ego-motion, take the animal's residual displacement, and
 aggregate per tracklet into a heading with a confidence (resultant length R + Rayleigh test).
 
-- Over all flights: 2,697 tracklets; **190 with a trustworthy direction** (83 / 68 / 39 by
-  class); median registration inlier ratio 0.86.
+- Over all flights: 2,697 tracklets; **190 pass the trusted gate** (83 / 68 / 39 by class), but
+  the gate is lenient - ~42 are weak (<=6 steps with trivially-high R, or <50 px displacement
+  that could be drift). The **defensible high-confidence core is 138** (>=8 steps and >=50 px;
+  58/49/31). Median registration inlier ratio 0.86.
+- Caution: 75% of frames have >1 same-class animal and the tracker has no appearance model, so
+  the 18 trusted tracklets with >1000 px displacement could be ID-switches, not one animal. See
+  [audit.md](audit.md).
 - Most animals are stationary -> no coherent heading -> correctly rejected. The movers are
   clear (median net displacement ~300 px, R ~0.66, ~11 steps).
 - Better registration (CLAHE + ratio test) raised the yield from 164 to 190 (+16%) and the
@@ -43,7 +50,8 @@ aggregate per tracklet into a heading with a confidence (resultant length R + Ra
   were mostly previous false positives - apparent coherence that was actually registration drift.
 
 ## Do single-image cues recover that direction?
-Axis comparison (mod 180), 945 crops from the 190 movers, error in degrees:
+Axis comparison (mod 180), 945 crops from 189 mover tracklets (so 189 independent directions,
+not 945 - the crops are pseudo-replicated), error in degrees:
 
 | method (single image) | median err | Acc@45 |
 |---|---|---|
@@ -61,7 +69,7 @@ Axis comparison (mod 180), 945 crops from the 190 movers, error in degrees:
 
   | class | GST | constant baseline |
   |---|---|---|
-  | 0 (380 crops) | 39.4 | 16.1 (GST worse than the prior) |
+  | 0 (415 crops) | 39.4 | 16.1 (GST worse than the prior) |
   | 1 | 25.4 | 32.6 |
   | 2 | 19.3 | 36.2 |
   | overall | 29.1 | 30.6 |
@@ -95,8 +103,11 @@ Flight-disjoint GroupKFold, 5 folds x 3 seeds:
   random forest (~1 std), but they are statistically indistinguishable from each other (balanced
   acc 0.62-0.64, within one std - so "BioCLIP best" is noise). The ceiling is low (AUC ~0.70) on
   noisy, partly circular tracker-derived proxy labels, and the from-scratch CNN collapsed
-  (data-limited, not a clean "thermal beats CNNs"). Modest and proxy-limited - re-check with human
-  labels. See [audit.md](audit.md).
+  (data-limited, not a clean "thermal beats CNNs"). The proxy labels are also flight-clustered
+  (per-flight purity 0.89), so the honest bar is the scene structure (~0.84 balanced acc), not the
+  0.50 baseline - the models sit below it, so this is partly scene-correlation, not proven
+  single-crop motion detection. Modest and proxy-limited - re-check with human labels. See
+  [audit.md](audit.md).
 
 ## Pending (needs Andreas's manual labels)
 - Validate the tracking direction against human perception; report the head-discernibility rate.
