@@ -7,6 +7,21 @@
 > Research question (fixed by proposal): *Can we determine the movement direction of wildlife
 > from thermal light-field (AOS) drone imagery?* Methodology is ours to design.
 
+## Status updates (2026-06-19)
+After Andreas trialled the annotation tool, two things changed from the original plan:
+- **Ground truth for direction now comes from tracking, not hand-labelling.** Hand-labelling
+  direction proved unreliable (57% of crops have more than one animal; most animals are faint or
+  compact and the head is not visible; there is no truth a human can verify). Tracking the animal
+  across a flight's frames, after removing drone ego-motion, gives an objective heading (validated on
+  flight 98: per-step resultant R=0.86, Rayleigh-significant). Human labels become a small validation
+  set on clearly visible animals (does tracking match what a person sees), plus the moving/stationary
+  call and the "how often is the head even recognisable" rate. The annotation package therefore
+  focuses on moving/standing first, direction only when the head is obvious.
+- **Species is shown as the dataset class id (0/1/2), not a name.** The names Rotwild/Rehwild/
+  Schwarzwild are not in the dataset (data.yaml names the classes '2','3','4'); the id->species
+  mapping came from the old project and is unverified - to be confirmed with the BAMBI team. It does
+  not affect the direction task.
+
 ## Approved decisions
 - **Label schema:** 8 directional classes (45° sectors) **+ "axis-only / unsure" escape** + moving/stationary flag.
 - **Species focus:** start with **Rotwild (red deer)** for deep-learning depth; classical methods on all 3.

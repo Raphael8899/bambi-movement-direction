@@ -40,7 +40,7 @@ def circ_mae(pred, gt, period: float = 360.0) -> float:
 
 
 def circ_median(pred, gt, period: float = 360.0) -> float:
-    """Median absolute angular error (robust to 180-deg flip outliers)."""
+    """Median absolute angular error (less swayed by 180-deg flip outliers than the mean)."""
     return float(np.median(circ_dist(pred, gt, period)))
 
 

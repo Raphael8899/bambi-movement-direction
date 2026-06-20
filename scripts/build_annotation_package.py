@@ -1,13 +1,13 @@
-"""Build the standalone annotation package that Andreas downloads and runs.
+"""Build the annotation package Andreas runs.
 
-It selects a stratified set of crops, writes them plus a manifest into a folder
-together with the (self-contained) tool, and zips the whole thing. The only thing
-the recipient needs is Python 3 with Pillow.
+We only keep crops with exactly ONE animal in view (no herds, no neighbours), where the
+animal is clearly warmer than the background. Each saved crop is contrast-stretched and
+has the target animal drawn in green so it's obvious what to judge. We spread the
+selection across species and across an elongation score (a rough stationary/moving mix)
+and shuffle the order, so labelling any prefix still gives a representative sample.
 
-Selection: per species we keep crops where the animal is clearly warmer than its
-surroundings, then sample evenly across three elongation bins (compact .. streaked)
-so the annotator sees both stationary-looking and motion-blurred animals. The final
-manifest order is shuffled, so stopping part-way still gives a representative sample.
+Sized for ~5 hours: ~1500 crops. The result is a self-contained folder + zip that runs
+with just Python 3 and Pillow.
 """
 import os
 import shutil
@@ -20,142 +20,133 @@ import numpy as np
 import pandas as pd
 
 from config import DATASET_DIR, IMG_SIZE, CLASS_NAMES, PROJECT_ROOT, SEED
-from src.data_loader import load_annotations
-from src.crops import extract_crop, contrast_to_surround, crop_coherence
+from src.data_loader import load_annotations, yolo_to_box
+from src.crops import contrast_to_surround, crop_coherence
 
-PER_SPECIES = {"Rotwild": 500, "Rehwild": 400, "Schwarzwild": 300}
-MIN_CONTRAST = 6.0
+PER_SPECIES = {"Rotwild": 600, "Rehwild": 500, "Schwarzwild": 400}
+MIN_CONTRAST = 12.0
 SIZE_RANGE = (50, 150)
 PAD = 0.30
 
-PKG_DIR = PROJECT_ROOT / "dist" / "bambi_annotation"
-CROPS_DIR = PKG_DIR / "crops"
-TOOL_SRC = PROJECT_ROOT / "src" / "annotation"
+PKG = PROJECT_ROOT / "dist" / "bambi_annotation"
+TOOL = PROJECT_ROOT / "src" / "annotation"
 
 
-def select_for_species(df_species, n, rng):
-    """Read candidates, keep the visible ones, return up to n stratified by elongation."""
+def region(xc, yc, w, h):
+    cx, cy = xc * IMG_SIZE, yc * IMG_SIZE
+    half = max(w, h) * IMG_SIZE * (0.5 + PAD)
+    x0, y0 = max(0, int(cx - half)), max(0, int(cy - half))
+    x1, y1 = min(IMG_SIZE, int(cx + half)), min(IMG_SIZE, int(cy + half))
+    return x0, y0, x1, y1
+
+
+def alone_in_region(target, others, reg):
+    """True if no OTHER box overlaps the crop region (single animal in view)."""
+    x0, y0, x1, y1 = reg
+    for o in others:
+        if o.line_num == target.line_num:
+            continue
+        bx0, by0, bx1, by1 = yolo_to_box(o.xc, o.yc, o.w, o.h, IMG_SIZE)
+        if not (bx1 < x0 or bx0 > x1 or by1 < y0 or by0 > y1):
+            return False
+    return True
+
+
+def select(df_species, by_image, n, rng):
     kept = []
     cache = {}
     order = rng.permutation(len(df_species))
-    max_scan = int(2.5 * n) + 50
-    for k in order[:max_scan]:
+    for k in order:
+        if len(kept) >= int(1.4 * n):
+            break
         r = df_species.iloc[int(k)]
+        reg = region(r.xc, r.yc, r.w, r.h)
+        siblings = list(by_image[r.image_file].itertuples(index=False))
+        if not alone_in_region(r, siblings, reg):
+            continue
         ip = os.path.join(DATASET_DIR, r.split, "images", r.image_file)
         im = cache.get(ip)
         if im is None:
             im = cv2.imread(ip, cv2.IMREAD_GRAYSCALE)
             if im is None:
                 continue
-            if len(cache) < 48:
+            if len(cache) < 64:
                 cache[ip] = im
         if contrast_to_surround(im, r.xc, r.yc, r.w, r.h, IMG_SIZE) < MIN_CONTRAST:
             continue
-        crop, _ = extract_crop(im, r.xc, r.yc, r.w, r.h, pad=PAD, img_size=IMG_SIZE)
-        if crop.size == 0 or min(crop.shape[:2]) < 16:
+        x0, y0, x1, y1 = reg
+        crop = im[y0:y1, x0:x1]
+        if crop.size == 0 or min(crop.shape[:2]) < 24:
             continue
-        kept.append((r, crop_coherence(crop), crop))
-        if len(kept) >= int(1.4 * n):
-            break
+        kept.append((r, crop_coherence(crop), crop, (x0, y0)))
 
     if not kept:
         return []
-    cohs = np.array([c for _, c, _ in kept])
+    cohs = np.array([c for _, c, _, _ in kept])
     q1, q2 = np.quantile(cohs, [1 / 3, 2 / 3])
     bins = {0: [], 1: [], 2: []}
-    for item in kept:
-        c = item[1]
-        bins[0 if c <= q1 else (1 if c <= q2 else 2)].append(item)
-    picked = []
+    for it in kept:
+        c = it[1]
+        bins[0 if c <= q1 else (1 if c <= q2 else 2)].append(it)
+    out = []
     per_bin = n // 3 + 1
     for b in (0, 1, 2):
         idx = rng.permutation(len(bins[b]))[:per_bin]
-        picked.extend(bins[b][i] for i in idx)
-    rng.shuffle(picked)
-    return picked[:n]
+        out.extend(bins[b][i] for i in idx)
+    rng.shuffle(out)
+    return out[:n]
+
+
+def render(crop, target, origin):
+    """Contrast-stretch and draw the green target box."""
+    lo, hi = np.percentile(crop, [2, 99])
+    cs = np.clip((crop.astype(float) - lo) / max(hi - lo, 1) * 255, 0, 255).astype(np.uint8)
+    vis = cv2.cvtColor(cs, cv2.COLOR_GRAY2BGR)
+    x0, y0 = origin
+    bx0, by0, bx1, by1 = yolo_to_box(target.xc, target.yc, target.w, target.h, IMG_SIZE)
+    cv2.rectangle(vis, (int(bx0 - x0), int(by0 - y0)), (int(bx1 - x0), int(by1 - y0)),
+                  (0, 255, 0), 2)
+    return vis
 
 
 def main():
     rng = np.random.default_rng(SEED)
     df = load_annotations()
+    by_image = {f: g for f, g in df.groupby("image_file")}
     df = df[df.long_px.between(*SIZE_RANGE)].copy()
 
-    if CROPS_DIR.exists():
-        shutil.rmtree(PKG_DIR)
-    CROPS_DIR.mkdir(parents=True)
+    if PKG.exists():
+        shutil.rmtree(PKG)
+    (PKG / "crops").mkdir(parents=True)
 
     rows = []
     for cls, name in CLASS_NAMES.items():
-        n = PER_SPECIES[name]
-        picked = select_for_species(df[df.cls == cls].reset_index(drop=True), n, rng)
-        for r, _, crop in picked:
+        picked = select(df[df.cls == cls].reset_index(drop=True), by_image, PER_SPECIES[name], rng)
+        for r, _, crop, origin in picked:
             crop_id = f"{r.split}_{r.flight_id}_{r.frame_num}_{r.line_num}"
-            fname = f"crops/{crop_id}.png"
-            cv2.imwrite(str(PKG_DIR / fname), crop)
-            rows.append({"crop_id": crop_id, "file": fname, "species": name,
+            cv2.imwrite(str(PKG / "crops" / f"{crop_id}.png"), render(crop, r, origin))
+            # store the dataset CLASS ID (0/1/2), not a species name: the name->id mapping
+            # is unverified (not in the dataset) and must be confirmed with the BAMBI team.
+            rows.append({"crop_id": crop_id, "file": f"crops/{crop_id}.png", "species": str(cls),
                          "flight_id": int(r.flight_id), "frame_num": int(r.frame_num),
                          "orig_long_px": round(float(r.long_px), 1)})
-        print(f"{name}: {len(picked)} crops")
+        print(f"{name}: {len(picked)}")
 
     manifest = pd.DataFrame(rows).sample(frac=1.0, random_state=SEED).reset_index(drop=True)
-    manifest.to_csv(PKG_DIR / "manifest.csv", index=False)
+    manifest.to_csv(PKG / "manifest.csv", index=False)
 
-    shutil.copy2(TOOL_SRC / "annotate.py", PKG_DIR / "annotate.py")
-    shutil.copy2(TOOL_SRC / "label_store.py", PKG_DIR / "label_store.py")
-    (PKG_DIR / "requirements.txt").write_text("pillow\n", encoding="utf-8")
-    (PKG_DIR / "run.bat").write_text(
-        "@echo off\r\npython annotate.py\r\npause\r\n", encoding="utf-8")
-    (PKG_DIR / "README.md").write_text(_README, encoding="utf-8")
+    shutil.copy2(TOOL / "annotate.py", PKG / "annotate.py")
+    shutil.copy2(TOOL / "label_store.py", PKG / "label_store.py")
+    (PKG / "requirements.txt").write_text("pillow\n", encoding="utf-8")
+    (PKG / "run.bat").write_text("@echo off\r\npython annotate.py\r\npause\r\n", encoding="utf-8")
+    (PKG / "README.md").write_text(
+        (PROJECT_ROOT / "scripts" / "annotation_readme.md").read_text(encoding="utf-8"),
+        encoding="utf-8")
 
     archive = shutil.make_archive(str(PROJECT_ROOT / "dist" / "bambi_annotation"),
-                                  "zip", root_dir=PKG_DIR.parent, base_dir="bambi_annotation")
-    total = len(manifest)
-    print(f"\n{total} crops total")
-    print("package:", PKG_DIR)
-    print("zip:", archive)
+                                  "zip", root_dir=PKG.parent, base_dir="bambi_annotation")
+    print(f"\n{len(manifest)} crops total\nzip: {archive}")
 
-
-_README = """# BAMBI annotation
-
-You are labelling small thermal images of single wild animals seen from a drone.
-For each crop, set two things and move on. It saves after every crop and resumes
-where you left off, so you can stop and continue any time.
-
-## Setup (once)
-1. Install Python 3 (python.org). On Windows tick "Add python.exe to PATH".
-2. In this folder run:  `pip install -r requirements.txt`
-
-## Start
-Double-click `run.bat` (Windows), or from this folder run:
-
-    python annotate.py
-
-(an output file `labels.csv` appears in this folder)
-
-## What to do per crop
-1. Is the animal sharp or smeared?
-   - `s` stationary (crisp blob)   `d` moving (smeared / streaked)   `u` unsure
-2. Which way does the HEAD point? The number keys mirror a compass (up = top of image):
-
-       7 NW    8 N     9 NE
-       4 W     5 axis  6 E
-       1 SW    2 S     3 SE
-
-   - `1`-`9` (not 5): head points that way
-   - `5`: you can see the body line but not which end is the head
-   - `0`: nothing usable in this crop
-
-Then `Enter` (or `Space`) for the next one. `Backspace` goes back to fix a crop,
-`Esc` saves and quits.
-
-## Notes
-- Be honest. If you can't tell the head from the tail, press `5`. Don't guess.
-- Red deer are usually the clearest; roe deer and boar are often axis-only.
-- Aim for roughly 4-5 hours. The order is random, so whatever you finish is fine
-  - just get through as many as you can.
-
-When done, send back `labels.csv`.
-"""
 
 if __name__ == "__main__":
     main()

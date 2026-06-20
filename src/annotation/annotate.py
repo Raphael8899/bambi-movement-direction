@@ -180,7 +180,7 @@ class App:
     def refresh(self):
         idx, n = self.store.index, self.store.count()
         cid, sp = self.store.crop_id(), self.store.species()
-        self.root.title(f"annotate  |  {cid}  |  {sp}")
+        self.root.title(f"annotate  |  {cid}  |  class {sp}")
 
         img = self._load(self.store.image_path())
         self._draw_main(img)
@@ -193,7 +193,7 @@ class App:
         motion = lab["motion_state"] or "—"
         dcls = lab["direction_class"]
         dname = ls.COMPASS_NAMES.get(dcls, "—") if dcls is not None else "—"
-        self.selection.config(text=f"crop: {cid}\nspecies: {sp}\n\nmotion:    {motion}\ndirection: {dname}")
+        self.selection.config(text=f"crop: {cid}\nclass: {sp}\n\nmotion:    {motion}\ndirection: {dname}")
 
         if self.store.is_complete():
             self.status.config(text="complete — Enter/Space for next", fg=GOOD)
