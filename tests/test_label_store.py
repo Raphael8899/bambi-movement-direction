@@ -276,55 +276,73 @@ def test_completed_count_and_progress(tmp_path):
     assert store.completed_count() == 2
 
 
-# --- axis orientation (8 axes at 22.5 deg, head unknown) --------------------
+# --- direction: axis orientation (key 5) + optional arrowhead at either end --
 
-def test_axis_classes_are_eight_at_22_5_steps():
-    from src.annotation.label_store import AXIS_DEG, AXIS_CYCLE
-    assert AXIS_CYCLE == list(range(10, 18))   # 8 axis classes 10..17
-    assert [AXIS_DEG[c] for c in AXIS_CYCLE] == [0.0, 22.5, 45.0, 67.5, 90.0, 112.5, 135.0, 157.5]
-    for c in AXIS_CYCLE:
-        assert LabelStore.direction_class_to_deg(c) == AXIS_DEG[c]
+def test_orientation_and_head_codes():
+    from src.annotation.label_store import (axis_index, head_of, make_dir,
+                                            AXIS_ONLY, HEAD_FWD, HEAD_REV, N_ORIENT)
+    assert N_ORIENT == 8
+    for i in range(N_ORIENT):
+        assert axis_index(AXIS_ONLY + i) == i and head_of(AXIS_ONLY + i) == "none"
+        assert axis_index(HEAD_FWD + i) == i and head_of(HEAD_FWD + i) == "fwd"
+        assert axis_index(HEAD_REV + i) == i and head_of(HEAD_REV + i) == "rev"
+    assert make_dir(3, "none") == AXIS_ONLY + 3
+    assert make_dir(3, "fwd") == HEAD_FWD + 3
+    assert make_dir(3, "rev") == HEAD_REV + 3
+    assert axis_index(0) is None and axis_index(None) is None   # legacy compass / unset
 
 
-def test_axis_classes_accepted_by_set_direction(tmp_path):
+def test_direction_degrees_axis_vs_arrow():
+    from src.annotation.label_store import make_dir
+    # orientation i=2 -> a 45 deg line
+    assert LabelStore.direction_class_to_deg(make_dir(2, "none")) == 45.0    # axis (axial)
+    assert LabelStore.direction_class_to_deg(make_dir(2, "fwd")) == 45.0     # arrow, one end
+    assert LabelStore.direction_class_to_deg(make_dir(2, "rev")) == 225.0    # arrow, other end
+    assert LabelStore.direction_class_to_deg(make_dir(0, "rev")) == 180.0
+
+
+def test_rotate_orientation_keeps_head_and_wraps():
+    from src.annotation.label_store import rotate_orientation, make_dir, axis_index, head_of
+    assert rotate_orientation(None) == make_dir(0, "none")     # first press -> axis only
+    r = rotate_orientation(make_dir(7, "fwd"))
+    assert axis_index(r) == 0 and head_of(r) == "fwd"          # wraps, keeps the arrow
+
+
+def test_set_head_keeps_orientation():
+    from src.annotation.label_store import set_head, make_dir, axis_index
+    c = make_dir(3, "none")
+    assert set_head(c, "fwd") == make_dir(3, "fwd")
+    assert set_head(c, "rev") == make_dir(3, "rev")
+    assert set_head(make_dir(3, "fwd"), "none") == make_dir(3, "none")
+    assert axis_index(set_head(None, "fwd")) == 0              # no orientation yet -> first
+
+
+def test_new_codes_accepted_invalid_rejected(tmp_path):
+    from src.annotation.label_store import make_dir
     store = _basic_store(tmp_path, n=1)
     store.set_motion("moving")
-    store.set_direction(12)  # 45 deg axis, head unknown
+    store.set_direction(make_dir(5, "rev"))
     assert store.is_complete(0)
-    assert store.label(0)["direction_class"] == 12
-
-
-def test_unused_direction_codes_rejected(tmp_path):
-    store = _basic_store(tmp_path, n=1)
-    for bad in (8, 9, 18, -3):   # 18 is past the last axis (17)
+    for bad in (8, 9, 18, 28, 38, -3):
         with pytest.raises(ValueError):
             store.set_direction(bad)
 
 
-def test_next_axis_class_cycles_through_eight():
-    from src.annotation.label_store import next_axis_class
-    assert next_axis_class(None) == 10   # nothing yet -> first axis
-    assert next_axis_class(0) == 10      # from a full heading -> first axis
-    assert next_axis_class(13) == 14     # steps one orientation at a time
-    assert next_axis_class(16) == 17
-    assert next_axis_class(17) == 10     # wraps after the 8th
+def test_direction_names_present():
+    from src.annotation.label_store import COMPASS_NAMES, AXIS_ONLY, HEAD_FWD, HEAD_REV
+    assert "axis" in COMPASS_NAMES[AXIS_ONLY].lower()
+    assert "head" in COMPASS_NAMES[HEAD_FWD].lower()
+    assert "head" in COMPASS_NAMES[HEAD_REV].lower()
 
 
-def test_axis_names_present():
-    from src.annotation.label_store import COMPASS_NAMES, AXIS_CYCLE
-    for c in AXIS_CYCLE:
-        assert "axis" in COMPASS_NAMES[c].lower()
-
-
-def test_save_axis_writes_axis_degree(tmp_path):
+def test_save_writes_arrow_heading(tmp_path):
+    from src.annotation.label_store import make_dir
     store = _basic_store(tmp_path, n=1)
     store.set_motion("moving")
-    store.set_direction(13)  # 67.5 deg axis
+    store.set_direction(make_dir(2, "rev"))   # 225 deg heading
     store.save()
-    out = tmp_path / "labels.csv"
-    r = list(csv.DictReader(open(out, encoding="utf-8")))[0]
-    assert r["direction_class"] == "13"
-    assert r["direction_deg"] == "67.5"
+    r = list(csv.DictReader(open(tmp_path / "labels.csv", encoding="utf-8")))[0]
+    assert r["direction_deg"] == "225.0"
 
 
 def test_slight_motion_state_accepted(tmp_path):

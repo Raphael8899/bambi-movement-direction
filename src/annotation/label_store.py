@@ -1,10 +1,11 @@
 """Manifest + label bookkeeping for the annotation tool (no UI here, so it can be tested).
 
-Direction classes: N=0, NE=1, E=2, SE=3, S=4, SW=5, W=6, NW=7 (head visible).
-Axis-only orientations (line visible, head/tail unknown): 8 axes every 22.5 deg, classes 10..17
-(10 = 0 deg = vertical N-S, 12 = 45 deg, 14 = 90 deg = horizontal, ... 17 = 157.5 deg).
-Legacy generic axis-only=-1, none=-2. Headings are in image degrees, 0=up(N), increasing clockwise;
-axis degrees are the same convention reduced to [0,180).
+Direction is an axis orientation (8 of them, every 22.5 deg, set by rotating with key 5) plus an
+optional arrowhead at either end:
+  axis only (no arrow)       -> direction_class 10..17, axial angle 22.5*i in [0,180)
+  arrow toward the angle     -> direction_class 20..27, heading 22.5*i
+  arrow toward the other end -> direction_class 30..37, heading 22.5*i + 180
+Legacy: full compass 0..7, generic axis-only=-1, none=-2. Image degrees, 0=up(N), clockwise.
 """
 import csv
 import os
@@ -22,26 +23,67 @@ DIR_NONE = -2
 
 _COMPASS_DEG = {0: 0.0, 1: 45.0, 2: 90.0, 3: 135.0, 4: 180.0, 5: 225.0, 6: 270.0, 7: 315.0}
 
-# Axis-only orientations: the body/blur line is visible but head vs tail is not.
-# Eight axes every 22.5 deg in [0,180), same compass convention (10 = vertical N-S).
+# Direction = an axis orientation (set/rotated with key 5) plus an optional arrowhead.
+# Eight orientations every 22.5 deg in [0,180), compass convention (i=0 is vertical N-S).
+# Each orientation i (0..7) has three states, encoded in one direction_class:
+#   axis only (no arrow):        AXIS_ONLY + i  (10..17) -> axial angle 22.5*i in [0,180)
+#   arrow toward the angle:      HEAD_FWD  + i  (20..27) -> heading 22.5*i
+#   arrow toward the other end:  HEAD_REV  + i  (30..37) -> heading 22.5*i + 180
+N_ORIENT = 8
 AXIS_STEP = 22.5
-AXIS_CYCLE = list(range(10, 18))                       # classes 10..17, rotated by repeated presses
-AXIS_DEG = {c: round((c - 10) * AXIS_STEP, 1) for c in AXIS_CYCLE}
+AXIS_ONLY = 10
+HEAD_FWD = 20
+HEAD_REV = 30
+_BASES = {"none": AXIS_ONLY, "fwd": HEAD_FWD, "rev": HEAD_REV}
+
+
+def axis_index(cls):
+    """Orientation index 0..7 if cls is a new-style direction code, else None."""
+    if isinstance(cls, int) and not isinstance(cls, bool):
+        for base in _BASES.values():
+            if base <= cls < base + N_ORIENT:
+                return cls - base
+    return None
+
+
+def head_of(cls):
+    """'none' / 'fwd' / 'rev' for a direction code, else None."""
+    for name, base in _BASES.items():
+        if isinstance(cls, int) and base <= cls < base + N_ORIENT:
+            return name
+    return None
+
+
+def make_dir(i, head):
+    """Direction code from orientation index i (0..7) and head ('none'/'fwd'/'rev')."""
+    return _BASES[head] + (i % N_ORIENT)
+
+
+def rotate_orientation(cls):
+    """Key 5: advance the orientation by one step, keeping the arrow; non-direction -> first axis."""
+    i = axis_index(cls)
+    if i is None:
+        return make_dir(0, "none")
+    return make_dir((i + 1) % N_ORIENT, head_of(cls))
+
+
+def set_head(cls, head):
+    """Set the arrow state ('none'/'fwd'/'rev'), keeping the orientation (default orientation 0)."""
+    i = axis_index(cls)
+    return make_dir(0 if i is None else i, head)
+
 
 COMPASS_NAMES = {0: "N", 1: "NE", 2: "E", 3: "SE", 4: "S", 5: "SW", 6: "W", 7: "NW",
                  DIR_AXIS_ONLY: "axis-only", DIR_NONE: "none"}
-COMPASS_NAMES.update({c: f"axis {AXIS_DEG[c]:g}°" for c in AXIS_CYCLE})
+for _i in range(N_ORIENT):
+    _d = AXIS_STEP * _i
+    COMPASS_NAMES[AXIS_ONLY + _i] = f"axis {_d:g}°"
+    COMPASS_NAMES[HEAD_FWD + _i] = f"head {_d:g}°"
+    COMPASS_NAMES[HEAD_REV + _i] = f"head {(_d + 180) % 360:g}°"
 
 
 def _valid_direction(cls):
-    return cls in _COMPASS_DEG or cls in AXIS_DEG or cls in (DIR_AXIS_ONLY, DIR_NONE)
-
-
-def next_axis_class(cls):
-    """Next axis orientation for the UI's repeat-press cycle; a non-axis maps to the first axis."""
-    if cls in AXIS_CYCLE:
-        return AXIS_CYCLE[(AXIS_CYCLE.index(cls) + 1) % len(AXIS_CYCLE)]
-    return AXIS_CYCLE[0]
+    return axis_index(cls) is not None or cls in _COMPASS_DEG or cls in (DIR_AXIS_ONLY, DIR_NONE)
 
 
 class LabelStore:
@@ -180,9 +222,13 @@ class LabelStore:
 
     @staticmethod
     def direction_class_to_deg(cls):
-        if cls in AXIS_DEG:
-            return AXIS_DEG[cls]
-        return _COMPASS_DEG.get(cls, "")
+        i = axis_index(cls)
+        if i is not None:
+            deg = AXIS_STEP * i
+            if head_of(cls) == "rev":
+                return round((deg + 180) % 360, 1)
+            return round(deg, 1)          # axis-only (axial) or fwd heading: both = 22.5*i
+        return _COMPASS_DEG.get(cls, "")  # legacy compass 0..7, else ""
 
     def save(self):
         out_dir = os.path.dirname(os.path.abspath(self.labels_path)) or "."

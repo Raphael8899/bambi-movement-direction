@@ -6,12 +6,9 @@ Run it from the folder that holds manifest.csv and the crops:
     python annotate.py manifest.csv out.csv andreas
 
 Keys
-    direction (numpad layout = where the animal's HEAD points):
-        7 NW   8 N    9 NE
-        4 W    5 axis 6 E
-        1 SW   2 S    3 SE
-        5 = axis only: the body/blur line is visible but head vs tail is not.
-            Press 5 again to rotate the line through the 4 axes until it matches.
+    direction:
+        5 = rotate the body/blur line to the angle (press repeatedly; 8 steps of 22.5 deg)
+        1 = arrow at one end     2 = arrow at the other end     3 = no arrow (axis only)
         0 = nothing usable in this crop
     motion:   s stationary   f slight   d moving   u unsure
     Enter/Space next   Backspace previous   Esc save & quit
@@ -32,8 +29,9 @@ from PIL import Image, ImageTk, ImageDraw
 DISPLAY = 500
 THUMB_MAX = 160
 
-DIR_KEYS = {"8": 0, "9": 1, "6": 2, "3": 3, "2": 4, "1": 5, "4": 6, "7": 7}
 MOTION_KEYS = {"s": "stationary", "f": "slight", "d": "moving", "u": "unsure"}
+# direction keys map to (head state); 5 rotates the orientation, 0 = nothing usable
+HEAD_KEYS = {"1": "rev", "2": "fwd", "3": "none"}
 
 BG, PANEL, FG, MUTED = "#1e1e1e", "#262626", "#e6e6e6", "#9a9a9a"
 ACCENT, GOOD, WARN, ARROW = "#4fc3f7", "#7bd88f", "#ffb454", "#ff5252"
@@ -90,34 +88,20 @@ class App:
         self.selection = tk.Label(right, text="", bg=PANEL, fg=FG, font=self.f_med, justify="left")
         self.selection.pack(anchor="w", padx=14, pady=(0, 12))
 
-        tk.Label(right, text="DIRECTION (numpad = compass)", bg=PANEL, fg=MUTED,
-                 font=self.f_small).pack(anchor="w", padx=14)
-        self._dir_legend(right)
+        tk.Label(right, text="DIRECTION", bg=PANEL, fg=MUTED, font=self.f_small).pack(anchor="w", padx=14)
+        tk.Label(right, text=("5  rotate the line to the angle\n"
+                              "1  arrow at one end\n"
+                              "2  arrow at the other end\n"
+                              "3  no arrow (axis only)\n"
+                              "0  nothing usable"),
+                 bg=PANEL, fg=FG, font=self.f_mono, justify="left").pack(anchor="w", padx=24, pady=(2, 0))
+
         tk.Label(right, text="MOTION", bg=PANEL, fg=MUTED, font=self.f_small).pack(anchor="w", padx=14, pady=(12, 0))
         tk.Label(right, text="s stationary   f slight\nd moving   u unsure", bg=PANEL, fg=FG,
                  font=self.f_mono, justify="left").pack(anchor="w", padx=24)
         tk.Label(right, text="NAVIGATION", bg=PANEL, fg=MUTED, font=self.f_small).pack(anchor="w", padx=14, pady=(12, 0))
         tk.Label(right, text="Enter/Space next\nBackspace previous\nEsc save & quit",
                  bg=PANEL, fg=FG, font=self.f_mono, justify="left").pack(anchor="w", padx=24)
-
-    def _dir_legend(self, parent):
-        grid = tk.Frame(parent, bg=PANEL)
-        grid.pack(anchor="w", padx=24, pady=(4, 0))
-        layout = [[("7", "NW"), ("8", "N"), ("9", "NE")],
-                  [("4", "W"), ("5", "axis"), ("6", "E")],
-                  [("1", "SW"), ("2", "S"), ("3", "SE")]]
-        self.cells = {}
-        for r, line in enumerate(layout):
-            for c, (key, name) in enumerate(line):
-                cell = tk.Label(grid, text=f"{key}\n{name}", width=5, height=2, bg="#333",
-                                fg=FG, font=self.f_small, relief="raised", bd=2)
-                cell.grid(row=r, column=c, padx=2, pady=2)
-                self.cells[key] = cell
-        self.none_cell = tk.Label(parent, text="0 = nothing usable", bg=PANEL, fg=FG, font=self.f_mono)
-        self.none_cell.pack(anchor="w", padx=24, pady=(6, 0))
-        self.axis_hint = tk.Label(parent, text="5 = axis (press again to rotate the line)",
-                                  bg=PANEL, fg=MUTED, font=self.f_small)
-        self.axis_hint.pack(anchor="w", padx=24, pady=(2, 0))
 
     def _bind(self):
         for d in "0123456789":
@@ -142,13 +126,13 @@ class App:
 
     def _digit(self, event):
         d = self._digit_of(event)
-        if d == "0":
+        cur = self.store.label()["direction_class"]
+        if d == "5":                                  # rotate the orientation (angle)
+            self.store.set_direction(ls.rotate_orientation(cur))
+        elif d in HEAD_KEYS:                           # 1/2 = arrow at an end, 3 = no arrow
+            self.store.set_direction(ls.set_head(cur, HEAD_KEYS[d]))
+        elif d == "0":                                 # nothing usable
             self.store.set_none()
-        elif d == "5":
-            # axis-only: press 5 repeatedly to rotate through the 4 axis orientations
-            self.store.set_direction(ls.next_axis_class(self.store.label()["direction_class"]))
-        elif d in DIR_KEYS:
-            self.store.set_direction(DIR_KEYS[d])
         else:
             return
         self._changed()
@@ -207,21 +191,6 @@ class App:
         else:
             self.status.config(text="incomplete", fg=WARN)
             self.missing.config(text="missing: " + " + ".join(self.store.missing()))
-        self._highlight(dcls)
-
-    def _highlight(self, dcls):
-        for cell in self.cells.values():
-            cell.config(bg="#333", fg=FG)
-        self.none_cell.config(fg=FG)
-        if dcls == ls.DIR_NONE:
-            self.none_cell.config(fg=GOOD)
-            return
-        if dcls in ls.AXIS_DEG or dcls == ls.DIR_AXIS_ONLY:
-            self.cells["5"].config(bg=ACCENT, fg="#000")
-            return
-        for key, cls in DIR_KEYS.items():
-            if cls == dcls and key in self.cells:
-                self.cells[key].config(bg=ACCENT, fg="#000")
 
     def _load(self, path):
         try:
@@ -238,17 +207,20 @@ class App:
     def _draw_main(self, img):
         big = img.resize((DISPLAY, DISPLAY), Image.NEAREST)
         dcls = self.store.label()["direction_class"]
-        if dcls is None or dcls == ls.DIR_NONE:
-            pass                                     # nothing to draw
-        elif dcls in ls.AXIS_DEG:                    # axis (head unknown) -> double-headed line
+        i = ls.axis_index(dcls)
+        if i is not None:                                   # new-style direction
             big = big.copy()
-            self._axis_line(big, ls.AXIS_DEG[dcls])
-        elif dcls == ls.DIR_AXIS_ONLY:              # legacy generic axis-only
-            big = big.copy()
-            self._axis_line(big, 0.0)
-        else:                                        # 0..7 = full heading -> arrow
+            if ls.head_of(dcls) == "none":
+                self._axis_line(big, ls.AXIS_STEP * i)      # double-headed line, no arrow
+            else:
+                self._arrow(big, ls.LabelStore.direction_class_to_deg(dcls))   # arrow at an end
+        elif isinstance(dcls, int) and 0 <= dcls <= 7:      # legacy compass heading
             big = big.copy()
             self._arrow(big, ls.LabelStore.direction_class_to_deg(dcls))
+        elif dcls == ls.DIR_AXIS_ONLY:                       # legacy generic axis-only
+            big = big.copy()
+            self._axis_line(big, 0.0)
+        # None / DIR_NONE -> no overlay
         self._photo = ImageTk.PhotoImage(big)
         self.canvas.delete("all")
         self.canvas.create_image(DISPLAY // 2, DISPLAY // 2, image=self._photo)
