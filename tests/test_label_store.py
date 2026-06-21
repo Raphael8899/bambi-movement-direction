@@ -276,55 +276,58 @@ def test_completed_count_and_progress(tmp_path):
     assert store.completed_count() == 2
 
 
-# --- axis orientation (4 axes, head unknown) --------------------------------
+# --- axis orientation (8 axes at 22.5 deg, head unknown) --------------------
 
-def test_axis_classes_have_axis_degrees():
-    from src.annotation.label_store import AXIS_DEG
-    # four axes at 0 / 45 / 90 / 135 degrees (mod 180), compass convention
-    assert set(AXIS_DEG) == {10, 11, 12, 13}
-    assert AXIS_DEG[10] == 0.0 and AXIS_DEG[11] == 45.0
-    assert AXIS_DEG[12] == 90.0 and AXIS_DEG[13] == 135.0
-    for c in AXIS_DEG:
+def test_axis_classes_are_eight_at_22_5_steps():
+    from src.annotation.label_store import AXIS_DEG, AXIS_CYCLE
+    assert AXIS_CYCLE == list(range(10, 18))   # 8 axis classes 10..17
+    assert [AXIS_DEG[c] for c in AXIS_CYCLE] == [0.0, 22.5, 45.0, 67.5, 90.0, 112.5, 135.0, 157.5]
+    for c in AXIS_CYCLE:
         assert LabelStore.direction_class_to_deg(c) == AXIS_DEG[c]
 
 
 def test_axis_classes_accepted_by_set_direction(tmp_path):
     store = _basic_store(tmp_path, n=1)
     store.set_motion("moving")
-    store.set_direction(11)  # NE-SW axis, head unknown
+    store.set_direction(12)  # 45 deg axis, head unknown
     assert store.is_complete(0)
-    assert store.label(0)["direction_class"] == 11
+    assert store.label(0)["direction_class"] == 12
 
 
 def test_unused_direction_codes_rejected(tmp_path):
     store = _basic_store(tmp_path, n=1)
-    for bad in (8, 9, 14, -3):
+    for bad in (8, 9, 18, -3):   # 18 is past the last axis (17)
         with pytest.raises(ValueError):
             store.set_direction(bad)
 
 
-def test_next_axis_class_cycles():
+def test_next_axis_class_cycles_through_eight():
     from src.annotation.label_store import next_axis_class
     assert next_axis_class(None) == 10   # nothing yet -> first axis
     assert next_axis_class(0) == 10      # from a full heading -> first axis
-    assert next_axis_class(10) == 11
-    assert next_axis_class(11) == 12
-    assert next_axis_class(12) == 13
-    assert next_axis_class(13) == 10     # wraps
+    assert next_axis_class(13) == 14     # steps one orientation at a time
+    assert next_axis_class(16) == 17
+    assert next_axis_class(17) == 10     # wraps after the 8th
 
 
 def test_axis_names_present():
-    from src.annotation.label_store import COMPASS_NAMES
-    for c in (10, 11, 12, 13):
+    from src.annotation.label_store import COMPASS_NAMES, AXIS_CYCLE
+    for c in AXIS_CYCLE:
         assert "axis" in COMPASS_NAMES[c].lower()
 
 
 def test_save_axis_writes_axis_degree(tmp_path):
     store = _basic_store(tmp_path, n=1)
     store.set_motion("moving")
-    store.set_direction(11)  # NE-SW -> 45 deg
+    store.set_direction(13)  # 67.5 deg axis
     store.save()
     out = tmp_path / "labels.csv"
     r = list(csv.DictReader(open(out, encoding="utf-8")))[0]
-    assert r["direction_class"] == "11"
-    assert r["direction_deg"] == "45.0"
+    assert r["direction_class"] == "13"
+    assert r["direction_deg"] == "67.5"
+
+
+def test_slight_motion_state_accepted(tmp_path):
+    store = _basic_store(tmp_path, n=1)
+    store.set_motion("slight")          # the new in-between of stationary and moving
+    assert store.label(0)["motion_state"] == "slight"

@@ -1,7 +1,8 @@
 """Manifest + label bookkeeping for the annotation tool (no UI here, so it can be tested).
 
 Direction classes: N=0, NE=1, E=2, SE=3, S=4, SW=5, W=6, NW=7 (head visible).
-Axis-only orientations (line visible, head/tail unknown): N-S=10, NE-SW=11, E-W=12, NW-SE=13.
+Axis-only orientations (line visible, head/tail unknown): 8 axes every 22.5 deg, classes 10..17
+(10 = 0 deg = vertical N-S, 12 = 45 deg, 14 = 90 deg = horizontal, ... 17 = 157.5 deg).
 Legacy generic axis-only=-1, none=-2. Headings are in image degrees, 0=up(N), increasing clockwise;
 axis degrees are the same convention reduced to [0,180).
 """
@@ -14,7 +15,7 @@ MANIFEST_COLUMNS = ["crop_id", "file", "class_id", "flight_id", "frame_num", "or
 LABEL_COLUMNS = ["crop_id", "motion_state", "direction_class", "direction_deg",
                  "annotator", "timestamp_iso"]
 
-MOTION_STATES = ("stationary", "moving", "unsure")
+MOTION_STATES = ("stationary", "slight", "moving", "unsure")
 
 DIR_AXIS_ONLY = -1
 DIR_NONE = -2
@@ -22,13 +23,14 @@ DIR_NONE = -2
 _COMPASS_DEG = {0: 0.0, 1: 45.0, 2: 90.0, 3: 135.0, 4: 180.0, 5: 225.0, 6: 270.0, 7: 315.0}
 
 # Axis-only orientations: the body/blur line is visible but head vs tail is not.
-# Four axes at 0/45/90/135 deg (mod 180), same compass convention (10 = vertical N-S).
-AXIS_DEG = {10: 0.0, 11: 45.0, 12: 90.0, 13: 135.0}
-AXIS_CYCLE = [10, 11, 12, 13]   # order the UI rotates through on repeated presses
+# Eight axes every 22.5 deg in [0,180), same compass convention (10 = vertical N-S).
+AXIS_STEP = 22.5
+AXIS_CYCLE = list(range(10, 18))                       # classes 10..17, rotated by repeated presses
+AXIS_DEG = {c: round((c - 10) * AXIS_STEP, 1) for c in AXIS_CYCLE}
 
 COMPASS_NAMES = {0: "N", 1: "NE", 2: "E", 3: "SE", 4: "S", 5: "SW", 6: "W", 7: "NW",
-                 10: "axis N-S", 11: "axis NE-SW", 12: "axis E-W", 13: "axis NW-SE",
                  DIR_AXIS_ONLY: "axis-only", DIR_NONE: "none"}
+COMPASS_NAMES.update({c: f"axis {AXIS_DEG[c]:g}°" for c in AXIS_CYCLE})
 
 
 def _valid_direction(cls):

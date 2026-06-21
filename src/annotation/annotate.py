@@ -13,7 +13,7 @@ Keys
         5 = axis only: the body/blur line is visible but head vs tail is not.
             Press 5 again to rotate the line through the 4 axes until it matches.
         0 = nothing usable in this crop
-    motion:   s stationary   d moving   u unsure
+    motion:   s stationary   f slight   d moving   u unsure
     Enter/Space next   Backspace previous   Esc save & quit
 
 Labels are saved after every crop, and reopening resumes at the first unlabelled crop.
@@ -33,7 +33,7 @@ DISPLAY = 500
 THUMB_MAX = 160
 
 DIR_KEYS = {"8": 0, "9": 1, "6": 2, "3": 3, "2": 4, "1": 5, "4": 6, "7": 7}
-MOTION_KEYS = {"s": "stationary", "d": "moving", "u": "unsure"}
+MOTION_KEYS = {"s": "stationary", "f": "slight", "d": "moving", "u": "unsure"}
 
 BG, PANEL, FG, MUTED = "#1e1e1e", "#262626", "#e6e6e6", "#9a9a9a"
 ACCENT, GOOD, WARN, ARROW = "#4fc3f7", "#7bd88f", "#ffb454", "#ff5252"
@@ -94,8 +94,8 @@ class App:
                  font=self.f_small).pack(anchor="w", padx=14)
         self._dir_legend(right)
         tk.Label(right, text="MOTION", bg=PANEL, fg=MUTED, font=self.f_small).pack(anchor="w", padx=14, pady=(12, 0))
-        tk.Label(right, text="s stationary   d moving   u unsure", bg=PANEL, fg=FG,
-                 font=self.f_mono).pack(anchor="w", padx=24)
+        tk.Label(right, text="s stationary   f slight\nd moving   u unsure", bg=PANEL, fg=FG,
+                 font=self.f_mono, justify="left").pack(anchor="w", padx=24)
         tk.Label(right, text="NAVIGATION", bg=PANEL, fg=MUTED, font=self.f_small).pack(anchor="w", padx=14, pady=(12, 0))
         tk.Label(right, text="Enter/Space next\nBackspace previous\nEsc save & quit",
                  bg=PANEL, fg=FG, font=self.f_mono, justify="left").pack(anchor="w", padx=24)
