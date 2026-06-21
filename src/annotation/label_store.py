@@ -8,7 +8,7 @@ import os
 import tempfile
 from datetime import datetime, timezone
 
-MANIFEST_COLUMNS = ["crop_id", "file", "species", "flight_id", "frame_num", "orig_long_px"]
+MANIFEST_COLUMNS = ["crop_id", "file", "class_id", "flight_id", "frame_num", "orig_long_px"]
 LABEL_COLUMNS = ["crop_id", "motion_state", "direction_class", "direction_deg",
                  "annotator", "timestamp_iso"]
 
@@ -86,8 +86,9 @@ class LabelStore:
     def crop_id(self, idx=None):
         return self._records[self._i(idx)]["crop_id"]
 
-    def species(self, idx=None):
-        return self._records[self._i(idx)].get("species", "")
+    def class_id(self, idx=None):
+        rec = self._records[self._i(idx)]
+        return rec.get("class_id", rec.get("species", ""))  # tolerate old "species"-named manifests
 
     def image_path(self, idx=None):
         return os.path.join(self._base_dir, self._records[self._i(idx)]["file"])

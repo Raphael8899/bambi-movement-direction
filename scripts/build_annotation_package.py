@@ -127,7 +127,7 @@ def main():
             cv2.imwrite(str(PKG / "crops" / f"{crop_id}.png"), render(crop, r, origin))
             # store the dataset CLASS ID (0/1/2), not a species name: the name->id mapping
             # is unverified (not in the dataset) and must be confirmed with the BAMBI team.
-            rows.append({"crop_id": crop_id, "file": f"crops/{crop_id}.png", "species": str(cls),
+            rows.append({"crop_id": crop_id, "file": f"crops/{crop_id}.png", "class_id": str(cls),
                          "flight_id": int(r.flight_id), "frame_num": int(r.frame_num),
                          "orig_long_px": round(float(r.long_px), 1)})
         print(f"{name}: {len(picked)}")

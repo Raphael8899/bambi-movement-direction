@@ -62,10 +62,12 @@ Two sub-tasks:
 **Moving/Stationary classifier (rebuilt):** GST elongation/coherence + inner-vs-surround sharpness (animal-specific) +
 blur length; validated against human labels (unsupervised vs supervised comparison).
 
-## Ground-truth strategy (no GPS collars)
-1. **Gold human labels (5 h) = primary.** Stratified test/val; fast keyboard tool (1–8 dir, 0 axis-only, space M/S).
-2. **Tracking displacement = secondary pseudo-GT** (moving subset, Rayleigh-filtered); cross-check + 180° sign;
-   **never used to tune reported results**.
+## Ground-truth strategy (no GPS collars) — revised after the feasibility pivot
+1. **Tracking displacement = primary direction GT** for moving animals (Rayleigh-filtered, after
+   ego-motion registration). Hand-labelling direction proved unreliable (see Status updates above), so
+   the original "gold human labels = primary" plan was dropped.
+2. **Human labels = validation, not primary:** a small set on clearly-visible animals (does tracking
+   match perception?), the moving/stationary call, and the head-discernibility rate.
 3. **Internal validators (GT-free):** within-track temporal consistency; body-axis ↔ blur-axis agreement; cross-method agreement.
 
 ## Evaluation protocol
@@ -76,25 +78,25 @@ blur length; validated against human labels (unsupervised vs supervised comparis
 - Tracking agreement: Jammalamadaka–Sarma circular correlation + permutation p + Bland-Altman (moving subset only).
 
 ## Tracking branch (sign + validation)
-Per flight: image-based registration (ORB/LK + RANSAC **affine**) → SORT with **centroid/Kalman-predicted** gating
+Per flight: image-based registration (ORB/LK + RANSAC **partial-affine / similarity**) → SORT with **centroid/Kalman-predicted** gating
 (IoU fails on small fast blobs) → heading via circular stats + Rayleigh filter. Honest caveats (no pose, ghosted borders).
 
 ## Risks & fallbacks
 | Risk | Fallback |
 |---|---|
 | head/tail not recoverable | axis (mod 180°) is the complete headline result; head/tail = negative result + tracking sign |
-| tracking too noisy | gold labels + internal consistency carry eval; tracking exploratory |
+| tracking too noisy | restrict to the high-confidence core (>=8 steps, >=50 px) + internal consistency; human validation set anchors it |
 | DL overfits | classical methods strong standalone; the comparison itself is the contribution |
 | low annotation yield | classical arms need 0 labels; ~300 labels suffice for a test set |
 | ghosting/quality | quality filter; report retained fraction |
 
 ## Phase plan (semester)
 P0 setup · P1 BB-refinement+quality+crops · P2 annotation tool + **feasibility batch (~100–150, Raphael ~0.5 h)** ·
-P3 M/S + classical branches · P4 **gold set (~800–1200, Raphael ~4 h)** · P5 DL bake-off · P6 tracking+sign ·
+P3 M/S + classical branches · P4 **validation set (~1,500, Andreas)** · P5 DL bake-off · P6 tracking+sign ·
 P7 evaluation/stats · P8 report + presentation.
 
 ## Annotation spec (~5 h, done by Andreas)
-One stratified batch of ~1,200 crops (red deer 500 / roe deer 400 / boar 300), visibility-filtered and
+One stratified batch of ~1,500 crops (red deer 600 / roe deer 500 / boar 400), visibility-filtered and
 shuffled so any prefix is representative. Per crop: motion state (stationary / moving / unsure) and facing
 direction (8 compass classes, or axis-only when head/tail is ambiguous, or none). Honest "unsure" over
 guessing. Shipped as a standalone package (`dist/bambi_annotation.zip`) that runs anywhere with Python +

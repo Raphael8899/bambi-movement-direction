@@ -63,7 +63,7 @@ not 945 - the crops are pseudo-replicated), error in degrees:
 | cepstrum               | 33.1 | 0.60 |
 | gradient histogram     | 33.5 | 0.59 |
 | moments / PCA          | 35.2 | 0.59 |
-| random baseline        | 46.1 | 0.48 |
+| random baseline        | 44.2 | 0.50 |
 
 - Among single-image methods GST (spatial-domain) ranks above the FFT / cepstrum ones on these
   small low-contrast crops (a stable ranking).

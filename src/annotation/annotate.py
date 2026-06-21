@@ -179,7 +179,7 @@ class App:
 
     def refresh(self):
         idx, n = self.store.index, self.store.count()
-        cid, sp = self.store.crop_id(), self.store.species()
+        cid, sp = self.store.crop_id(), self.store.class_id()
         self.root.title(f"annotate  |  {cid}  |  class {sp}")
 
         img = self._load(self.store.image_path())

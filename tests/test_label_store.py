@@ -9,7 +9,7 @@ from PIL import Image
 
 from src.annotation.label_store import LabelStore
 
-MANIFEST_COLUMNS = ["crop_id", "file", "species", "flight_id", "frame_num", "orig_long_px"]
+MANIFEST_COLUMNS = ["crop_id", "file", "class_id", "flight_id", "frame_num", "orig_long_px"]
 LABEL_COLUMNS = [
     "crop_id", "motion_state", "direction_class",
     "direction_deg", "annotator", "timestamp_iso",
@@ -24,7 +24,7 @@ def _make_png(path, size=(64, 48), color=(123, 200, 50)):
 def _write_manifest(tmp_path, rows):
     """Write a manifest CSV in tmp_path and create the referenced PNGs.
 
-    `rows` is a list of dicts with at least crop_id/file/species. Missing
+    `rows` is a list of dicts with at least crop_id/file/class_id. Missing
     columns are filled with placeholder values.
     """
     manifest = tmp_path / "manifest.csv"
@@ -35,7 +35,7 @@ def _write_manifest(tmp_path, rows):
             row = {
                 "crop_id": r["crop_id"],
                 "file": r["file"],
-                "species": r.get("species", "deer"),
+                "class_id": r.get("class_id", "0"),
                 "flight_id": r.get("flight_id", "F1"),
                 "frame_num": r.get("frame_num", i),
                 "orig_long_px": r.get("orig_long_px", 100),
@@ -50,7 +50,7 @@ def _write_manifest(tmp_path, rows):
 def _basic_store(tmp_path, n=3):
     """A store with `n` crops named c0..c(n-1)."""
     rows = [
-        {"crop_id": f"c{i}", "file": f"c{i}.png", "species": f"sp{i}"}
+        {"crop_id": f"c{i}", "file": f"c{i}.png", "class_id": f"sp{i}"}
         for i in range(n)
     ]
     manifest = _write_manifest(tmp_path, rows)
@@ -66,7 +66,7 @@ def test_manifest_load_count_and_fields(tmp_path):
     rec = store.record(0)
     assert rec["crop_id"] == "c0"
     assert rec["file"] == "c0.png"
-    assert rec["species"] == "sp0"
+    assert rec["class_id"] == "sp0"
     # file path should resolve to the manifest's directory
     assert os.path.basename(store.image_path(0)) == "c0.png"
     assert os.path.dirname(store.image_path(0)) == os.path.dirname(str(store.manifest_path))
@@ -188,7 +188,7 @@ def test_save_special_direction_deg_is_empty(tmp_path):
 
 def test_resume_jumps_to_first_unlabeled(tmp_path):
     rows = [
-        {"crop_id": f"c{i}", "file": f"c{i}.png", "species": "sp"}
+        {"crop_id": f"c{i}", "file": f"c{i}.png", "class_id": "sp"}
         for i in range(4)
     ]
     manifest = _write_manifest(tmp_path, rows)
@@ -215,7 +215,7 @@ def test_resume_jumps_to_first_unlabeled(tmp_path):
 
 
 def test_resume_all_labeled_clamps_to_last(tmp_path):
-    rows = [{"crop_id": "c0", "file": "c0.png", "species": "sp"}]
+    rows = [{"crop_id": "c0", "file": "c0.png", "class_id": "sp"}]
     manifest = _write_manifest(tmp_path, rows)
     labels_out = tmp_path / "labels.csv"
     with open(labels_out, "w", newline="", encoding="utf-8") as f:
