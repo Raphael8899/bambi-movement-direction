@@ -16,7 +16,9 @@ MANIFEST_COLUMNS = ["crop_id", "file", "class_id", "flight_id", "frame_num", "or
 LABEL_COLUMNS = ["crop_id", "motion_state", "direction_class", "direction_deg",
                  "annotator", "timestamp_iso"]
 
-MOTION_STATES = ("stationary", "slight", "moving", "unsure")
+# movement-intensity scale + an "unsure" escape. "moving" is kept only so older labels
+# (from before the 4-level scale) still parse; the tool no longer offers it.
+MOTION_STATES = ("stationary", "slight", "moderate", "strong", "unsure", "moving")
 
 DIR_AXIS_ONLY = -1
 DIR_NONE = -2

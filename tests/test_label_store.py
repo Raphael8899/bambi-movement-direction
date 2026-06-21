@@ -345,7 +345,8 @@ def test_save_writes_arrow_heading(tmp_path):
     assert r["direction_deg"] == "225.0"
 
 
-def test_slight_motion_state_accepted(tmp_path):
+def test_motion_intensity_levels_accepted(tmp_path):
     store = _basic_store(tmp_path, n=1)
-    store.set_motion("slight")          # the new in-between of stationary and moving
-    assert store.label(0)["motion_state"] == "slight"
+    for state in ("stationary", "slight", "moderate", "strong", "unsure"):
+        store.set_motion(state)
+        assert store.label(0)["motion_state"] == state

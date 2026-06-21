@@ -10,7 +10,7 @@ Keys
         5 = rotate the body/blur line to the angle (press repeatedly; 8 steps of 22.5 deg)
         1 = arrow at one end     2 = arrow at the other end     3 = no arrow (axis only)
         0 = nothing usable in this crop
-    motion:   s stationary   f slight   d moving   u unsure
+    motion:   s stationary   d slight   f moderate   g strong   u unsure
     Enter/Space next   Backspace previous   Esc save & quit
 
 Labels are saved after every crop, and reopening resumes at the first unlabelled crop.
@@ -29,7 +29,7 @@ from PIL import Image, ImageTk, ImageDraw
 DISPLAY = 500
 THUMB_MAX = 160
 
-MOTION_KEYS = {"s": "stationary", "f": "slight", "d": "moving", "u": "unsure"}
+MOTION_KEYS = {"s": "stationary", "d": "slight", "f": "moderate", "g": "strong", "u": "unsure"}
 # direction keys map to (head state); 5 rotates the orientation, 0 = nothing usable
 HEAD_KEYS = {"1": "rev", "2": "fwd", "3": "none"}
 
@@ -97,7 +97,7 @@ class App:
                  bg=PANEL, fg=FG, font=self.f_mono, justify="left").pack(anchor="w", padx=24, pady=(2, 0))
 
         tk.Label(right, text="MOTION", bg=PANEL, fg=MUTED, font=self.f_small).pack(anchor="w", padx=14, pady=(12, 0))
-        tk.Label(right, text="s stationary   f slight\nd moving   u unsure", bg=PANEL, fg=FG,
+        tk.Label(right, text="s stationary   d slight   f moderate\ng strong   u unsure", bg=PANEL, fg=FG,
                  font=self.f_mono, justify="left").pack(anchor="w", padx=24)
         tk.Label(right, text="NAVIGATION", bg=PANEL, fg=MUTED, font=self.f_small).pack(anchor="w", padx=14, pady=(12, 0))
         tk.Label(right, text="Enter/Space next\nBackspace previous\nEsc save & quit",
