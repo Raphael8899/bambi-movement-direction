@@ -274,3 +274,57 @@ def test_completed_count_and_progress(tmp_path):
     store.advance()
     store.set_none()
     assert store.completed_count() == 2
+
+
+# --- axis orientation (4 axes, head unknown) --------------------------------
+
+def test_axis_classes_have_axis_degrees():
+    from src.annotation.label_store import AXIS_DEG
+    # four axes at 0 / 45 / 90 / 135 degrees (mod 180), compass convention
+    assert set(AXIS_DEG) == {10, 11, 12, 13}
+    assert AXIS_DEG[10] == 0.0 and AXIS_DEG[11] == 45.0
+    assert AXIS_DEG[12] == 90.0 and AXIS_DEG[13] == 135.0
+    for c in AXIS_DEG:
+        assert LabelStore.direction_class_to_deg(c) == AXIS_DEG[c]
+
+
+def test_axis_classes_accepted_by_set_direction(tmp_path):
+    store = _basic_store(tmp_path, n=1)
+    store.set_motion("moving")
+    store.set_direction(11)  # NE-SW axis, head unknown
+    assert store.is_complete(0)
+    assert store.label(0)["direction_class"] == 11
+
+
+def test_unused_direction_codes_rejected(tmp_path):
+    store = _basic_store(tmp_path, n=1)
+    for bad in (8, 9, 14, -3):
+        with pytest.raises(ValueError):
+            store.set_direction(bad)
+
+
+def test_next_axis_class_cycles():
+    from src.annotation.label_store import next_axis_class
+    assert next_axis_class(None) == 10   # nothing yet -> first axis
+    assert next_axis_class(0) == 10      # from a full heading -> first axis
+    assert next_axis_class(10) == 11
+    assert next_axis_class(11) == 12
+    assert next_axis_class(12) == 13
+    assert next_axis_class(13) == 10     # wraps
+
+
+def test_axis_names_present():
+    from src.annotation.label_store import COMPASS_NAMES
+    for c in (10, 11, 12, 13):
+        assert "axis" in COMPASS_NAMES[c].lower()
+
+
+def test_save_axis_writes_axis_degree(tmp_path):
+    store = _basic_store(tmp_path, n=1)
+    store.set_motion("moving")
+    store.set_direction(11)  # NE-SW -> 45 deg
+    store.save()
+    out = tmp_path / "labels.csv"
+    r = list(csv.DictReader(open(out, encoding="utf-8")))[0]
+    assert r["direction_class"] == "11"
+    assert r["direction_deg"] == "45.0"

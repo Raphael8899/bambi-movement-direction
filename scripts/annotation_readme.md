@@ -38,7 +38,9 @@ The animal is a bright (warm) blob on a darker background.
        1 SW    2 S     3 SE
 
    1-9 (not 5) = the head points that way
-   5 = you can see the body line but not which end is the head
+   5 = axis only: you see the body/blur LINE but not which end is the head.
+       Press 5 again to rotate the line through the four orientations
+       (vertical -> diagonal / -> horizontal -> diagonal \) until it matches the animal.
    0 = nothing usable (you cannot make out the animal)
 
 ## How to tell the head (usually you cannot - that is ok)
@@ -46,7 +48,8 @@ The animal is a bright (warm) blob on a darker background.
   trail, so the head points to the sharper end.
 - Body shape: the thinner end is the neck / head, the bulkier end is the rump.
 - Visible legs or antlers.
-If you see the line but not the head -> press 5 (axis). If nothing -> press u, then 0.
+If you see the line but not the head -> press 5, then press 5 again until the orange line
+lies along the animal's body. If nothing -> press u, then 0.
 
 ## One rule
 Be honest. "axis" (5) or "unsure" (u) helps us more than a guess - we even measure how

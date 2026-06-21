@@ -10,7 +10,8 @@ Keys
         7 NW   8 N    9 NE
         4 W    5 axis 6 E
         1 SW   2 S    3 SE
-        5 = body axis visible but head/tail unclear
+        5 = axis only: the body/blur line is visible but head vs tail is not.
+            Press 5 again to rotate the line through the 4 axes until it matches.
         0 = nothing usable in this crop
     motion:   s stationary   d moving   u unsure
     Enter/Space next   Backspace previous   Esc save & quit
@@ -31,8 +32,7 @@ from PIL import Image, ImageTk, ImageDraw
 DISPLAY = 500
 THUMB_MAX = 160
 
-DIR_KEYS = {"8": 0, "9": 1, "6": 2, "3": 3, "2": 4, "1": 5, "4": 6, "7": 7,
-            "5": ls.DIR_AXIS_ONLY}
+DIR_KEYS = {"8": 0, "9": 1, "6": 2, "3": 3, "2": 4, "1": 5, "4": 6, "7": 7}
 MOTION_KEYS = {"s": "stationary", "d": "moving", "u": "unsure"}
 
 BG, PANEL, FG, MUTED = "#1e1e1e", "#262626", "#e6e6e6", "#9a9a9a"
@@ -115,6 +115,9 @@ class App:
                 self.cells[key] = cell
         self.none_cell = tk.Label(parent, text="0 = nothing usable", bg=PANEL, fg=FG, font=self.f_mono)
         self.none_cell.pack(anchor="w", padx=24, pady=(6, 0))
+        self.axis_hint = tk.Label(parent, text="5 = axis (press again to rotate the line)",
+                                  bg=PANEL, fg=MUTED, font=self.f_small)
+        self.axis_hint.pack(anchor="w", padx=24, pady=(2, 0))
 
     def _bind(self):
         for d in "0123456789":
@@ -141,6 +144,9 @@ class App:
         d = self._digit_of(event)
         if d == "0":
             self.store.set_none()
+        elif d == "5":
+            # axis-only: press 5 repeatedly to rotate through the 4 axis orientations
+            self.store.set_direction(ls.next_axis_class(self.store.label()["direction_class"]))
         elif d in DIR_KEYS:
             self.store.set_direction(DIR_KEYS[d])
         else:
@@ -210,6 +216,9 @@ class App:
         if dcls == ls.DIR_NONE:
             self.none_cell.config(fg=GOOD)
             return
+        if dcls in ls.AXIS_DEG or dcls == ls.DIR_AXIS_ONLY:
+            self.cells["5"].config(bg=ACCENT, fg="#000")
+            return
         for key, cls in DIR_KEYS.items():
             if cls == dcls and key in self.cells:
                 self.cells[key].config(bg=ACCENT, fg="#000")
@@ -229,18 +238,30 @@ class App:
     def _draw_main(self, img):
         big = img.resize((DISPLAY, DISPLAY), Image.NEAREST)
         dcls = self.store.label()["direction_class"]
-        if dcls is not None and dcls not in (ls.DIR_AXIS_ONLY, ls.DIR_NONE):
+        if dcls is None or dcls == ls.DIR_NONE:
+            pass                                     # nothing to draw
+        elif dcls in ls.AXIS_DEG:                    # axis (head unknown) -> double-headed line
+            big = big.copy()
+            self._axis_line(big, ls.AXIS_DEG[dcls])
+        elif dcls == ls.DIR_AXIS_ONLY:              # legacy generic axis-only
+            big = big.copy()
+            self._axis_line(big, 0.0)
+        else:                                        # 0..7 = full heading -> arrow
             big = big.copy()
             self._arrow(big, ls.LabelStore.direction_class_to_deg(dcls))
-        elif dcls == ls.DIR_AXIS_ONLY:
-            big = big.copy()
-            d = ImageDraw.Draw(big)
-            c = DISPLAY / 2
-            d.line([(c, c - DISPLAY * 0.32), (c, c + DISPLAY * 0.32)], fill=WARN, width=6)
-            d.ellipse([c - 8, c - 8, c + 8, c + 8], outline=WARN, width=4)
         self._photo = ImageTk.PhotoImage(big)
         self.canvas.delete("all")
         self.canvas.create_image(DISPLAY // 2, DISPLAY // 2, image=self._photo)
+
+    def _axis_line(self, img, deg):
+        """Double-headed line (no arrowhead) marking an axis whose head is unknown."""
+        rad = math.radians(deg)
+        dx, dy = math.sin(rad), -math.cos(rad)   # 0 deg = vertical (up), increasing clockwise
+        c = DISPLAY / 2
+        L = DISPLAY * 0.34
+        d = ImageDraw.Draw(img)
+        d.line([(c - dx * L, c - dy * L), (c + dx * L, c + dy * L)], fill=WARN, width=6)
+        d.ellipse([c - 9, c - 9, c + 9, c + 9], outline=WARN, width=4)
 
     def _arrow(self, img, deg):
         rad = math.radians(deg)

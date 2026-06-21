@@ -1,7 +1,9 @@
 """Manifest + label bookkeeping for the annotation tool (no UI here, so it can be tested).
 
-Direction classes: N=0, NE=1, E=2, SE=3, S=4, SW=5, W=6, NW=7, axis-only=-1, none=-2.
-Headings are in image degrees, 0=up(N), increasing clockwise.
+Direction classes: N=0, NE=1, E=2, SE=3, S=4, SW=5, W=6, NW=7 (head visible).
+Axis-only orientations (line visible, head/tail unknown): N-S=10, NE-SW=11, E-W=12, NW-SE=13.
+Legacy generic axis-only=-1, none=-2. Headings are in image degrees, 0=up(N), increasing clockwise;
+axis degrees are the same convention reduced to [0,180).
 """
 import csv
 import os
@@ -18,12 +20,26 @@ DIR_AXIS_ONLY = -1
 DIR_NONE = -2
 
 _COMPASS_DEG = {0: 0.0, 1: 45.0, 2: 90.0, 3: 135.0, 4: 180.0, 5: 225.0, 6: 270.0, 7: 315.0}
+
+# Axis-only orientations: the body/blur line is visible but head vs tail is not.
+# Four axes at 0/45/90/135 deg (mod 180), same compass convention (10 = vertical N-S).
+AXIS_DEG = {10: 0.0, 11: 45.0, 12: 90.0, 13: 135.0}
+AXIS_CYCLE = [10, 11, 12, 13]   # order the UI rotates through on repeated presses
+
 COMPASS_NAMES = {0: "N", 1: "NE", 2: "E", 3: "SE", 4: "S", 5: "SW", 6: "W", 7: "NW",
+                 10: "axis N-S", 11: "axis NE-SW", 12: "axis E-W", 13: "axis NW-SE",
                  DIR_AXIS_ONLY: "axis-only", DIR_NONE: "none"}
 
 
 def _valid_direction(cls):
-    return cls in _COMPASS_DEG or cls in (DIR_AXIS_ONLY, DIR_NONE)
+    return cls in _COMPASS_DEG or cls in AXIS_DEG or cls in (DIR_AXIS_ONLY, DIR_NONE)
+
+
+def next_axis_class(cls):
+    """Next axis orientation for the UI's repeat-press cycle; a non-axis maps to the first axis."""
+    if cls in AXIS_CYCLE:
+        return AXIS_CYCLE[(AXIS_CYCLE.index(cls) + 1) % len(AXIS_CYCLE)]
+    return AXIS_CYCLE[0]
 
 
 class LabelStore:
@@ -162,6 +178,8 @@ class LabelStore:
 
     @staticmethod
     def direction_class_to_deg(cls):
+        if cls in AXIS_DEG:
+            return AXIS_DEG[cls]
         return _COMPASS_DEG.get(cls, "")
 
     def save(self):
