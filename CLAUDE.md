@@ -9,6 +9,8 @@ wildlife from thermal Airborne Optical Sectioning (AOS) light-field drone imager
 2. `docs/results.md` (numbers) · `docs/audit.md` (what is overstated and why — critical self-review) ·
    `docs/plans/2026-06-19-movement-direction-design.md` (the plan) · `docs/references.md` (literature).
 3. `docs/lernhilfe-praesentation.md` (German study/prez doc) · `docs/BAMBI_Praesentation.pptx` / `.pdf`.
+4. `docs/projekt-komplett-erklaert.md` (long German "understand & defend everything from scratch" doc:
+   problem → idea → methods explained from zero → challenges → tech stack → results → Q&A → glossary).
 
 ## The core idea (one paragraph)
 There is **no ground truth for direction** (the head is rarely visible on the blurry warm blobs). So the
