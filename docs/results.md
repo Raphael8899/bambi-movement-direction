@@ -70,16 +70,18 @@ not 945 - the crops are pseudo-replicated), error in degrees:
 - The honest bar is a constant-heading baseline (predict the per-class mean heading, ignore the
   image), strong because the headings are not uniform. GST vs that baseline (median axial error):
 
-  | class | GST | constant baseline |
+  | class | GST | constant (per-class mean) |
   |---|---|---|
   | 0 (415 crops) | 39.4 | 16.1 (GST worse than the prior) |
   | 1 | 25.4 | 32.6 |
   | 2 | 19.3 | 36.2 |
-  | overall | 29.1 | 30.6 |
+  | overall (pooled) | 29.1 | 25.0 (GST worse than the prior) |
 
   So single-image estimation only helps for classes 1 and 2 (dispersed headings); for the most
-  common class 0 the direction is predictable from the class alone and the image estimate is
-  worse than guessing the mean.
+  common class 0 the direction is predictable from the class alone and the image estimate is worse
+  than guessing the mean. Pooled over all classes the per-class prior (25.0) also beats GST (29.1).
+  (A single *global* mean baseline - one axis for every class - is weaker at 30.6; the per-class
+  prior is the consistent, stronger bar and is what the per-class rows use.)
 - The earlier "movers agree better than stationary" figure is NOT used as evidence: stationary
   animals have no real direction (their gt is near-uniform noise, R=0.10), so that gap is
   tautological. See [audit.md](audit.md).

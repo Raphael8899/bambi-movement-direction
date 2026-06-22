@@ -18,7 +18,7 @@ import numpy as np
 
 from src.bb_refinement import refine_box, segment_warm_blob
 from src.blur import blur_axis_cepstrum
-from src.crops import contrast_to_surround, extract_crop
+from src.crops import extract_crop
 from src.data_loader import yolo_to_box
 from src.gst import gst_orientation
 

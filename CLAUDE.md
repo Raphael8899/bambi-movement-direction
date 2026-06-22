@@ -32,14 +32,17 @@ a from-scratch CNN, and frozen foundation models, with honest, leakage-free eval
 - Don't blindly trust the old `bambi-analysis` repo — re-derive and validate.
 
 ## Verify the claims (no raw dataset needed)
-`python scripts/verify_claims.py` re-derives every headline number (138 core, GST 29.1°, the movement
-table, EDA stats, …) from the committed `output/*.csv` and checks each against the documented value —
-needs only pandas + numpy. All checks currently pass. This confirms the docs match the data without the
-1.9 GB image set. (Image-level / linchpin re-checks DO need the raw dataset — see below.)
+`python scripts/verify_claims.py` re-derives the label-free headline numbers (138 core, the trusted
+gate, GST 29.1°, the per-class baselines, the movement table, …) directly from the committed
+`output/*.csv`, and re-checks the human-label numbers (linchpin 22.7°, GST-vs-human 10.7°, head 14 %,
+the real-label movement table, the motion-granularity decision) against the committed
+`output/label_validation_summary.csv` — needs only pandas + numpy. All checks pass. The *from-scratch*
+human-label re-derivation (which rebuilds that summary from `annotations/labels.csv` + the raw images)
+is `scripts/validate_labels.py`, and DOES need the raw dataset — see below.
 
 ## Repo guide
 - `src/` library code · `scripts/` runnable pipeline steps · `tests/` (run: `python -m pytest tests/ -q`,
-  128 passing) · `config.py` paths/constants · `annotations/` (where Andreas's `labels.csv` will go).
+  136 passing) · `config.py` paths/constants · `annotations/` (Andreas's `labels.csv`, committed).
 - `docs/` everything above. `requirements.txt` reproduces the Python env.
 
 ## Not in git (set up per machine)
@@ -52,6 +55,8 @@ needs only pandas + numpy. All checks currently pass. This confirms the docs mat
   the raw images); only `output/crops/`, `output/deep_feat_cache/` and `dist/` are gitignored.
 
 ## Pending (next work)
-When Andreas's `labels.csv` arrives: validate the tracking direction vs human perception (+ head-discernibility
-rate), re-run moving/stationary and direction evaluation on real labels, add a direction-regression DL arm
-(flight-disjoint), then the written report.
+Andreas's `labels.csv` (1,500 crops) arrived and the validation is **done** — see `docs/validation.md`:
+the tracking direction agrees with human perception (~22.7 deg median axis error), head-discernibility
+is only 14 %, and moving/stationary on real labels matches the proxy. Nothing in the pipeline had to be
+redesigned. Remaining: an optional direction-regression DL arm (flight-disjoint, data-limited), then the
+written report.

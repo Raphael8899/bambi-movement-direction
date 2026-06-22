@@ -25,17 +25,23 @@ def extract_crop(image: np.ndarray, xc, yc, w, h, pad: float = 0.3,
 
 
 def contrast_to_surround(image: np.ndarray, xc, yc, w, h, img_size: int = 2048) -> float:
-    """Mean intensity inside the box minus mean of a surrounding ring (animal visibility)."""
+    """Box mean minus the mean of a 3x box around it (a coarse animal-visibility score).
+
+    The wider region is the box grown by one box-width per side, so it still contains
+    the inner box rather than being a hollow ring. That dilutes the contrast by a
+    constant factor but stays monotonic, which is all the callers (an EDA stat and the
+    annotation-package visibility filter) need.
+    """
     x0, y0, x1, y1 = (int(v) for v in yolo_to_box(xc, yc, w, h, img_size))
     if x1 <= x0 or y1 <= y0:
         return 0.0
     inner = image[y0:y1, x0:x1]
     rx0, ry0 = max(0, x0 - (x1 - x0)), max(0, y0 - (y1 - y0))
     rx1, ry1 = min(img_size, x1 + (x1 - x0)), min(img_size, y1 + (y1 - y0))
-    ring = image[ry0:ry1, rx0:rx1]
-    if inner.size == 0 or ring.size == 0:
+    surround = image[ry0:ry1, rx0:rx1]
+    if inner.size == 0 or surround.size == 0:
         return 0.0
-    return float(inner.mean() - ring.mean())
+    return float(inner.mean() - surround.mean())
 
 
 def crop_coherence(crop_gray: np.ndarray) -> float:

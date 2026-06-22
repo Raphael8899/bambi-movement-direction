@@ -2,14 +2,16 @@
 
 Computer Vision course project (FH Hagenberg) · Raphael & Andreas.
 
-Estimating the **movement direction** of wildlife (red deer, roe deer, wild boar) in thermal
-**Airborne Optical Sectioning (AOS)** light-field drone imagery:
-- **Branch S** — body *orientation* of stationary animals.
-- **Branch M** — motion-*blur direction* of moving animals.
+Estimating the **movement direction** of wildlife (class ids 0/1/2 — an *assumed* red deer / roe
+deer / wild boar mapping) in thermal **Airborne Optical Sectioning (AOS)** light-field drone imagery.
 
-A comparative study of classical image processing, classical ML, CNNs (from scratch),
-transfer learning (DINOv2), and a foundation-model negative control (BioCLIP) — validated with
-manual gold labels, tracking-derived pseudo-ground-truth, and proper circular-statistics evaluation.
+There is no ground truth for direction (the head is rarely visible on the warm blobs), so the
+**direction ground truth comes from tracking**: register consecutive frames to cancel the drone's
+ego-motion, and the animal's residual displacement is its heading. On top of that we **compare**
+methods — classical single-image axis estimators (GST, FFT, cepstrum, …), classical ML, a
+from-scratch CNN, and frozen foundation models (DINOv2, CLIP, BioCLIP) — under leakage-free,
+flight-disjoint, circular-statistics evaluation. Andreas's 1,500 human labels are the independent
+**validation** set, not the ground truth.
 
 **Start with [docs/PROJECT.md](docs/PROJECT.md)** — the single ground-truth doc (task, dataset,
 decisions, current verified state, repo guide). The full plan is in
@@ -30,9 +32,10 @@ path by default; see `config.py` (`BAMBI_DATA_DIR` to point elsewhere). Re-downl
 labelling tool plus the crops to label. It runs anywhere with Python 3 and Pillow; see the README
 inside the package. Labels come back as `labels.csv` and go under `annotations/`.
 
-## Planned pipeline
-EDA → BB refinement → crops/quality → movement classification → classical orientation/blur →
-DL bake-off → tracking → evaluation. Each step is a notebook that reads `src/` and writes `output/`.
+## Pipeline
+EDA → BB refinement → crops/quality → tracking (direction ground truth) → classical orientation/blur
+→ movement classification → DL bake-off → label validation → evaluation. Each step is a script under
+`scripts/` that reads `src/` and writes `output/`.
 
 ## Tests
 ```bash
@@ -40,8 +43,8 @@ DL bake-off → tracking → evaluation. Each step is a notebook that reads `src
 ```
 
 ## Layout
-- `src/` — library code (data loading, BB refinement, features, orientation/, blur/, tracking, circular metrics, annotation tool)
-- `notebooks/` — phase notebooks (read `src/`, write `output/`)
-- `annotations/` — **gold labels** (kept in git)
-- `output/` — derived artifacts (gitignored)
-- `docs/` — plans, references, report drafts
+- `src/` — library code (data loading, BB refinement, features, blur, GST, tracking, circular metrics, annotation tool)
+- `scripts/` — phase scripts (read `src/`, write `output/`) + `verify_claims.py`
+- `annotations/` — Andreas's validation `labels.csv` (kept in git)
+- `output/` — derived artifacts (result CSVs + figures committed; crops/caches gitignored)
+- `docs/` — plan, references, results, audit, validation, presentation

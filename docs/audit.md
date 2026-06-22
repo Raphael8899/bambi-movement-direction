@@ -32,7 +32,7 @@ visually on real frames. Nothing is taken on trust.
 ## Problems found (corrections)
 
 ### 1. "190 trusted directions" overstates - the gate is too lenient
-The trusted gate (n_steps>=5, R>=0.5, disp>=5 px) lets through a weak tail:
+The trusted gate (n_steps>=5, median_inlier>=0.5, R>=0.5, rayleigh_p<0.05, disp>=5 px) lets through a weak tail:
 - `corr(R, n_steps) = -0.29`: high coherence is partly trivial when there are few steps. 23 of
   190 have <=6 steps (median R there 0.89).
 - 21 of 190 have net displacement < 50 px. High R with tiny displacement (e.g. R=0.99 at 34 px)
@@ -85,6 +85,8 @@ Dropped. (Crop sizes are matched - movers 69 px vs stationary 65 px - so at leas
   any confidence interval on 945 would be ~5x too tight.
 - images: "12,655" total files vs **12,514** with >=1 box. (Flights: **223 distinct flight ids total,
   221 with >=1 box** - both correct; "223" is not an error but the total, e.g. the real flight 223 in #2.)
+  The supervisor stated "225 flights" (`docs/source/assignment.md`); this export contains 223 ids (2 not
+  present in v2), so we report the verified 223/221, not 225.
 - random blur baseline median 46.1 / Acc@45 0.48 -> 44.2 / 0.50 on recompute (RNG-draw, not load-bearing).
 
 ### 7. The first pass's "~290x signal/noise" was itself wrong (corrected above)

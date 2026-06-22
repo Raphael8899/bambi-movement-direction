@@ -33,7 +33,9 @@ CLASS_ORDER = [0, 1, 2]
 
 
 def _cls_label(c):
-    return f"{CLASS_NAMES.get(c, c)} ({CLASS_EN.get(c, '')})"
+    # the class id is the only verified label; the species name is an UNCONFIRMED assumption
+    # (the dataset stores only ids 0/1/2 -- see config.py / docs), so lead with the id.
+    return f"cls {c} ({CLASS_NAMES.get(c, c)})"
 
 
 def _read_gray(split, image_file):

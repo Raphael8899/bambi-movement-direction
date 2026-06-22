@@ -40,7 +40,9 @@ SPLITS = ["train", "valid", "test"]
 IMG_SIZE = 2048
 
 # Roboflow remapped the original class ids 2/3/4 to 0/1/2. The data.yaml names
-# ('2','3','4') are misleading, so use this mapping.
+# ('2','3','4') are misleading, so use this mapping. NOTE: the id->species mapping
+# is an UNCONFIRMED assumption carried over from an old project -- the dataset stores
+# only ids 0/1/2; confirm Rotwild/Rehwild/Schwarzwild with the BAMBI team.
 CLASS_NAMES = {0: "Rotwild", 1: "Rehwild", 2: "Schwarzwild"}
 CLASS_EN = {0: "red deer", 1: "roe deer", 2: "wild boar"}
 CLASS_COLORS = {0: (255, 80, 80), 1: (80, 255, 80), 2: (80, 80, 255)}
@@ -51,11 +53,9 @@ FILENAME_RE = r"^(\d+)_(\d+)_jpg"
 SEED = 42
 FIGURE_DPI = 150
 
-# Heading is in degrees, 0 = east (+x), counter-clockwise, pointing at the head.
-# Axial quantities (body/blur axis) live in [0,180).
-N_DIRECTION_CLASSES = 8
-AXIS_ONLY_LABEL = -1
-UNSURE_LABEL = -2
+# Heading is in degrees, 0 = east (+x), clockwise on screen (image y points down, so
+# 90 = south), pointing at the head. Axial quantities (body/blur axis) live in [0,180).
+# The annotation direction codes are defined in src/annotation/label_store.py.
 
 CROP_PAD = 0.20
 NORM_CROP_SIZE = (96, 96)

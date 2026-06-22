@@ -1,0 +1,2 @@
+linchpin_n,linchpin_median,linchpin_acc45,linchpin_mover_n,linchpin_mover_median,gst_vs_human_n,gst_vs_human_median,head_rate,real_logreg_balacc,real_rf_balacc,real_scene_ceiling,motion_binary_auc,motion_slight_vs_stronger,motion_3level
+56,22.7,0.79,22,19.1,963,10.7,0.14,0.62,0.58,0.78,0.66,0.52,0.43

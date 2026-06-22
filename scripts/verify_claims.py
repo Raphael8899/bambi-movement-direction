@@ -69,11 +69,15 @@ check("distinct mover tracklets (independent dirs)", mov.tracklet_id.nunique(), 
 g = mov.gst_err.dropna()
 check("GST median axial error (~29.1)", round(g.median(), 1), 29.1, tol=0.2)
 check("GST Acc@45 (~0.68)", round((g <= 45).mean(), 2), 0.68, tol=0.02)
+pcb = []
 for c, exp_g, exp_c in [(0, 39.4, 16.1), (1, 25.4, 32.6), (2, 19.3, 36.2)]:
     cd = mov[mov.cls == c]
-    cb = np.median(circ_dist(np.full(len(cd), circ_mean(cd.gt_axis)), cd.gt_axis))
+    d_c = circ_dist(np.full(len(cd), circ_mean(cd.gt_axis)), cd.gt_axis)
+    pcb.append(d_c)
     check(f"class {c}: GST median", round(cd.gst_err.median(), 1), exp_g, tol=0.3)
-    check(f"class {c}: constant-baseline median", round(float(cb), 1), exp_c, tol=0.3)
+    check(f"class {c}: constant-baseline median", round(float(np.median(d_c)), 1), exp_c, tol=0.3)
+# pooled per-class baseline = the consistent overall bar (beats GST 29.1)
+check("overall per-class-mean baseline (~25.0)", round(float(np.median(np.concatenate(pcb))), 1), 25.0, tol=0.3)
 
 print("\n=== MOVING/STATIONARY (from output/movement_results.csv) ===")
 mr = pd.read_csv(f"{OUT}/movement_results.csv").set_index("family")
@@ -92,6 +96,16 @@ if os.path.exists(lv_path):
     gv = lv[lv.has_axis & lv.gst_err_vs_human.notna()]
     check("GST vs human axis median (~10.7)", round(gv.gst_err_vs_human.median(), 1), 10.7, tol=0.8)
     check("head-discernibility rate (~0.14)", round(lv.has_head.mean(), 2), 0.14, tol=0.02)
+
+ls_path = f"{OUT}/label_validation_summary.csv"
+if os.path.exists(ls_path):
+    print("\n=== VALIDATION SUMMARY (from output/label_validation_summary.csv) ===")
+    s = pd.read_csv(ls_path).iloc[0]
+    check("real-label moving/stationary LogReg (~0.62)", round(s.real_logreg_balacc, 2), 0.62, tol=0.03)
+    check("real-label scene-ceiling (~0.78)", round(s.real_scene_ceiling, 2), 0.78, tol=0.03)
+    check("motion binary AUC (~0.66)", round(s.motion_binary_auc, 2), 0.66, tol=0.03)
+    check("motion slight-vs-stronger = chance (~0.52)", round(s.motion_slight_vs_stronger, 2), 0.52, tol=0.04)
+    check("motion 3-level (~0.43)", round(s.motion_3level, 2), 0.43, tol=0.04)
 
 print("\n" + ("=" * 60))
 if _fail[0] == 0:

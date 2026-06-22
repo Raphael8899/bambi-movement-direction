@@ -1,9 +1,10 @@
 # Validation against human labels
 
 Andreas labelled all 1,500 curated crops (`annotations/labels.csv`). This is the independent
-check the whole project was waiting on. Every number here is reproduced from the committed
-`output/label_validation.csv` by `scripts/validate_labels.py` (and re-checked in
-`scripts/verify_claims.py`).
+check the whole project was waiting on. `scripts/validate_labels.py` produces every number here
+from the labels + the tracking output + the raw images, writing the per-crop
+`output/label_validation.csv` and the aggregate `output/label_validation_summary.csv`;
+`scripts/verify_claims.py` then re-checks those aggregates without needing the raw dataset.
 
 **Convention caveat (important):** the annotation tool stores angles as 0 = up, clockwise; the
 tracking heading is `atan2(dy, dx)` with y down (0 = east). They differ by 90 deg, so the human
@@ -55,7 +56,7 @@ Replacing the weak tracking proxy with Andreas's labels (moving = slight/moderat
 stationary n=550; 169 flights):
 
 - LogReg **0.62**, Random Forest 0.58 balanced accuracy; majority 0.50; per-flight-majority
-  scene-ceiling 0.78 (per-flight label purity 0.87).
+  scene-ceiling 0.78 (per-flight label purity 0.87 averaged over flights; 0.82 crop-weighted).
 
 Single-crop moving/stationary stays **modest and below the scene ceiling** — the same conclusion as
 with the proxy labels, now confirmed on real labels. Note "slight" (256) is borderline and noisy.

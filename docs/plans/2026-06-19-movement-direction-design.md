@@ -81,6 +81,10 @@ blur length; validated against human labels (unsupervised vs supervised comparis
 Per flight: image-based registration (ORB/LK + RANSAC **partial-affine / similarity**) → SORT with **centroid/Kalman-predicted** gating
 (IoU fails on small fast blobs) → heading via circular stats + Rayleigh filter. Honest caveats (no pose, ghosted borders).
 
+> Update (post-implementation): the SORT/Kalman gating was **dropped** for a simple greedy
+> nearest-centroid associator - deliberate (honesty pillar 3). It is enough on these short
+> tracklets and avoids a tuned motion model; see `src/tracking.py`.
+
 ## Risks & fallbacks
 | Risk | Fallback |
 |---|---|

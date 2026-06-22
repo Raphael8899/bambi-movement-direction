@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import balanced_accuracy_score
+from sklearn.metrics import balanced_accuracy_score, roc_auc_score
 from sklearn.model_selection import GroupKFold
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -160,8 +160,44 @@ def main():
     lr = cv(lambda s: make_pipeline(StandardScaler(),
             LogisticRegression(max_iter=2000, class_weight="balanced", random_state=s)))
     maj = d.groupby("flight_id").moving_human.transform(lambda s: int(round(s.mean())))
+    ceiling = balanced_accuracy_score(y, maj)
     print(f"  LogReg bal-acc={lr[0]:.2f}+-{lr[1]:.2f}  RandomForest bal-acc={rf[0]:.2f}+-{rf[1]:.2f}"
-          f"  majority=0.50  scene-ceiling={balanced_accuracy_score(y, maj):.2f}")
+          f"  majority=0.50  scene-ceiling={ceiling:.2f}")
+
+    section("6. MOTION GRANULARITY (is the fine intensity learnable?)")
+
+    def lr_make(s):
+        return make_pipeline(StandardScaler(), LogisticRegression(
+            max_iter=2000, class_weight="balanced", random_state=s))
+
+    def cv_bal(Xs, ys, gs, make, seeds=(0, 1, 2)):
+        acc = []
+        for s in seeds:
+            for tr, te in GroupKFold(5).split(Xs, ys, gs):
+                if len(np.unique(ys[tr])) < 2:
+                    continue
+                mdl = make(s); mdl.fit(Xs[tr], ys[tr])
+                acc.append(balanced_accuracy_score(ys[te], mdl.predict(Xs[te])))
+        return float(np.mean(acc))
+
+    auc = []
+    for s in (0, 1, 2):
+        for tr, te in GroupKFold(5).split(X, y, groups):
+            if len(np.unique(y[tr])) < 2:
+                continue
+            mdl = lr_make(s); mdl.fit(X[tr], y[tr])
+            auc.append(roc_auc_score(y[te], mdl.predict_proba(X[te])[:, 1]))
+    auc_bin = float(np.mean(auc))
+    dm = d[d.moving_human].copy()
+    Xm = np.vstack([hand[i] for i in dm.index])
+    ym = dm.motion_state.isin(("moderate", "strong")).astype(int).to_numpy()
+    slight_vs = cv_bal(Xm, ym, dm.flight_id.to_numpy(), lr_make)
+    lvl = {"stationary": 0, "slight": 1, "moderate": 2, "strong": 2}
+    y3 = d.motion_state.map(lvl).to_numpy()
+    three = cv_bal(X, y3, groups, lr_make)
+    n_stronger = int(dm.motion_state.isin(("moderate", "strong")).sum())
+    print(f"  binary AUC={auc_bin:.2f}  slight-vs-stronger={slight_vs:.2f}  3-level={three:.2f}"
+          f"  (moderate+strong n={n_stronger}, chance: binary 0.50 / 3-level 0.33)")
 
     out = OUTPUT_DIR / "label_validation.csv"
     cols = ["crop_id", "motion_state", "moving_human", "direction_class", "has_axis", "has_head",
@@ -169,6 +205,28 @@ def main():
             "axis_err_vs_tracking", "gst_axis", "gst_err_vs_human"]
     m[cols].to_csv(out, index=False)
     print(f"\nwrote {out}")
+
+    # Persist the aggregate headline numbers so verify_claims.py can re-check them WITHOUT the
+    # raw dataset (the per-crop CSV above is the detail; this is the summary the docs quote).
+    summary = {
+        "linchpin_n": len(val),
+        "linchpin_median": round(float(val.axis_err_vs_tracking.median()), 1),
+        "linchpin_acc45": round(float(np.mean(val.axis_err_vs_tracking <= 45)), 2),
+        "linchpin_mover_n": int(val.moving_human.sum()),
+        "linchpin_mover_median": round(float(val[val.moving_human].axis_err_vs_tracking.median()), 1),
+        "gst_vs_human_n": len(gv),
+        "gst_vs_human_median": round(float(gv.gst_err_vs_human.median()), 1),
+        "head_rate": round(float(L.has_head.mean()), 2),
+        "real_logreg_balacc": round(float(lr[0]), 2),
+        "real_rf_balacc": round(float(rf[0]), 2),
+        "real_scene_ceiling": round(float(ceiling), 2),
+        "motion_binary_auc": round(auc_bin, 2),
+        "motion_slight_vs_stronger": round(slight_vs, 2),
+        "motion_3level": round(three, 2),
+    }
+    sm = OUTPUT_DIR / "label_validation_summary.csv"
+    pd.DataFrame([summary]).to_csv(sm, index=False)
+    print(f"wrote {sm}")
 
 
 if __name__ == "__main__":

@@ -75,10 +75,10 @@ machine via the standalone package; species shown as class id, not a guessed nam
   (classification); annotation/ (label_store + annotate tool).
 - `scripts/` - run_tracking[_v2], eval_blur, movement_experiment, eda, ghosting_scan,
   build_annotation_package (-> dist/bambi_annotation.zip for Andreas).
-- `tests/` - 128 passing. Run: `"<interp>" -m pytest tests/ -q` from the project root.
+- `tests/` - 136 passing. Run: `"<interp>" -m pytest tests/ -q` from the project root.
 - `output/` (gitignored) - CSVs incl. tracking_directions.csv (canonical = v2, 190), _v1 backup,
   blur_eval.csv, movement_results.csv, eda_stats.csv. `dist/` (gitignored) - the annotation package.
-- `annotations/` - where Andreas's `labels.csv` will go (kept in git).
+- `annotations/` - Andreas's `labels.csv` (1,500 crops), kept in git.
 
 ## 7. Human-label validation (DONE — see docs/validation.md)
 Andreas labelled all 1,500 crops (`annotations/labels.csv`). Outcome (`scripts/validate_labels.py`):
