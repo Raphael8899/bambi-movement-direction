@@ -7,7 +7,7 @@ person - that is what you are doing here. Each image shows one animal (deer or w
 filmed from above with a thermal camera.
 
 ## What to label (the focus)
-For every image the main question is: **how much is the animal moving — not at all, slightly, more, or a lot?**
+For every image the main question is: **is the animal moving or standing still?**
 After that, set the body line's angle, and add a head arrow only if you can clearly see
 which end is the head. The head is often impossible to tell in these images - that is fine
 and expected; just leave the line without an arrow. Do not guess.
@@ -27,8 +27,8 @@ A large image with a GREEN box. Judge only the animal inside the green box; igno
 The animal is a bright (warm) blob on a darker background.
 
 ## Per image, set two things
-1) How much is it moving?
-   s = stationary (crisp)   d = slight   f = moderate   g = strong (very smeared)   u = unsure
+1) Moving or standing?
+   s = stationary (crisp)   d = moving (smeared / streaked)   u = unsure
 
 2) The body/blur LINE, and the HEAD only if you can tell.
    First press 5 to show a line, and press 5 again to rotate it (8 steps of 22.5 deg)

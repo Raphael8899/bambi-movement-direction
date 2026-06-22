@@ -345,8 +345,19 @@ def test_save_writes_arrow_heading(tmp_path):
     assert r["direction_deg"] == "225.0"
 
 
-def test_motion_intensity_levels_accepted(tmp_path):
+def test_motion_states_and_merge(tmp_path):
+    from src.annotation.label_store import merge_motion, MOTION_STATES
     store = _basic_store(tmp_path, n=1)
-    for state in ("stationary", "slight", "moderate", "strong", "unsure"):
+    # the simplified scale offered by the tool + the unsure escape are accepted
+    for state in ("stationary", "moving", "unsure"):
         store.set_motion(state)
         assert store.label(0)["motion_state"] == state
+    # legacy intensity levels still parse, so older labels.csv files still load
+    for state in ("slight", "moderate", "strong"):
+        assert state in MOTION_STATES
+    # the data-supported merge collapses the 4-level intensity to a binary
+    assert merge_motion("slight") == "moving"
+    assert merge_motion("moderate") == "moving"
+    assert merge_motion("strong") == "moving"
+    assert merge_motion("stationary") == "stationary"
+    assert merge_motion("unsure") == "unsure"

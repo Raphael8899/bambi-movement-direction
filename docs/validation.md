@@ -65,6 +65,23 @@ strict tracking gate does **not** trust (sensitivity 0.08). The trusted set is *
 low-recall** by design — it does not catch every mover, but it is right about direction on the ones
 it does keep (section 1). That is the correct reading, not a contradiction.
 
+## 5. How many motion levels? (decided from the data)
+The tool offered four intensity levels; Andreas used **stationary 550 · slight 256 · moderate 40 ·
+strong 2** (and 652 "unsure" = 43 %). We tested whether the fine levels carry signal:
+- They do **not** track objective tracking displacement (the per-tracklet net displacement is
+  ID-switch-confounded and even runs slightly *backwards* across the levels).
+- In image features only the stationary/moving split shows up (inner sharpness ~6.8 stationary vs
+  ~4.5 for all movers; blur length flat).
+- Learnability (flight-disjoint, hand features): **stationary vs moving** = bal-acc 0.62 / AUC 0.66;
+  but **slight vs moderate+strong (within movers) = 0.52, i.e. chance**; a 3-level scale = 0.43
+  (chance 0.33); the "clearly moving" class in any merge is only ~42 crops.
+
+**Decision: collapse to a binary scale — `stationary` vs `moving` (= slight+moderate+strong) — plus
+`unsure`.** The finer intensity is noise, not signal. The existing labels are remapped with
+`merge_motion()` (no re-labelling needed; legacy levels still parse), and the tool now offers only
+`s` stationary / `d` moving / `u` unsure. Note: 43 % "unsure" is itself a result — humans often cannot
+even decide moving vs standing on these crops.
+
 ## Verdict
 The human labels **confirm the project**: tracking recovers a real movement direction (humans agree
 ~20 deg), single-image GST captures orientation well (~11 deg) but not signed direction, and the head

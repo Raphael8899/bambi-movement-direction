@@ -16,9 +16,18 @@ MANIFEST_COLUMNS = ["crop_id", "file", "class_id", "flight_id", "frame_num", "or
 LABEL_COLUMNS = ["crop_id", "motion_state", "direction_class", "direction_deg",
                  "annotator", "timestamp_iso"]
 
-# movement-intensity scale + an "unsure" escape. "moving" is kept only so older labels
-# (from before the 4-level scale) still parse; the tool no longer offers it.
-MOTION_STATES = ("stationary", "slight", "moderate", "strong", "unsure", "moving")
+# The tool offers a binary scale + an "unsure" escape: stationary / moving / unsure. The data
+# (Andreas's 1500 labels) showed the finer intensity levels are not distinguishable -- "strong"
+# was used twice, and slight-vs-stronger is at chance from a single crop -- so they are merged into
+# "moving". The legacy intensity levels stay valid so older labels.csv files still parse, and
+# merge_motion() collapses them.
+MOTION_STATES = ("stationary", "moving", "unsure", "slight", "moderate", "strong")
+_MOTION_MERGE = {"slight": "moving", "moderate": "moving", "strong": "moving"}
+
+
+def merge_motion(state):
+    """Collapse the legacy intensity levels to the data-supported binary (stationary/moving/unsure)."""
+    return _MOTION_MERGE.get(state, state)
 
 DIR_AXIS_ONLY = -1
 DIR_NONE = -2
