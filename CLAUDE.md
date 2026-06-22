@@ -31,6 +31,12 @@ a from-scratch CNN, and frozen foundation models, with honest, leakage-free eval
 - Be rigorous and self-critical; reproduce numbers from the CSVs, don't assert.
 - Don't blindly trust the old `bambi-analysis` repo — re-derive and validate.
 
+## Verify the claims (no raw dataset needed)
+`python scripts/verify_claims.py` re-derives every headline number (138 core, GST 29.1°, the movement
+table, EDA stats, …) from the committed `output/*.csv` and checks each against the documented value —
+needs only pandas + numpy. All checks currently pass. This confirms the docs match the data without the
+1.9 GB image set. (Image-level / linchpin re-checks DO need the raw dataset — see below.)
+
 ## Repo guide
 - `src/` library code · `scripts/` runnable pipeline steps · `tests/` (run: `python -m pytest tests/ -q`,
   128 passing) · `config.py` paths/constants · `annotations/` (where Andreas's `labels.csv` will go).
@@ -42,7 +48,8 @@ a from-scratch CNN, and frozen foundation models, with honest, leakage-free eval
 - **Python env**: `python -m venv .venv && .venv/Scripts/python -m pip install -r requirements.txt`
   (add `torch` cu121 for the DL parts). Note: on the original machine an Application-Control policy blocked
   compiled DLLs under `Desktop\`, so a dedicated interpreter was used; on a normal machine a fresh venv works.
-- **`output/`** (CSVs, figures) and **`dist/`** (annotation package) are gitignored — regenerate via `scripts/`.
+- The small **result CSVs and figures in `output/` ARE committed** (so the claims are checkable without
+  the raw images); only `output/crops/`, `output/deep_feat_cache/` and `dist/` are gitignored.
 
 ## Pending (next work)
 When Andreas's `labels.csv` arrives: validate the tracking direction vs human perception (+ head-discernibility

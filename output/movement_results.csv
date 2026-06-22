@@ -1,0 +1,8 @@
+family,accuracy,accuracy_std,balanced_acc,balanced_acc_std,roc_auc,roc_auc_std
+majority_baseline,0.579,0.066,0.5,0.0,,
+hand_logreg,0.578,0.046,0.558,0.029,0.573,0.039
+hand_randomforest,0.615,0.049,0.584,0.045,0.615,0.061
+cnn_scratch,0.579,0.064,0.5,0.006,0.555,0.065
+frozen_dinov2,0.641,0.07,0.633,0.079,0.686,0.093
+frozen_clip,0.634,0.068,0.619,0.068,0.665,0.067
+frozen_bioclip,0.654,0.035,0.643,0.036,0.695,0.037

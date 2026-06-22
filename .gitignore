@@ -1,6 +1,12 @@
 # Data & outputs (large / regenerable)
 data/
-output/
+# keep the small, verifiable result artifacts in git; ignore the bulky/regenerable rest
+output/*
+!output/*.csv
+!output/*.png
+!output/slides/
+output/crops/
+output/deep_feat_cache/
 dist/
 *.pt
 *.pth
