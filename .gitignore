@@ -1,10 +1,10 @@
-# Data & outputs (large / regenerable)
+# Raw data (large, not redistributed; see README "Data")
 data/
-# keep the small, verifiable result artifacts in git; ignore the bulky/regenerable rest
+
+# Outputs: keep the small, verifiable result tables (CSV) in git; ignore everything else.
+# Figures are kept out on purpose and reviewed/published separately.
 output/*
 !output/*.csv
-!output/*.png
-!output/slides/
 output/crops/
 output/deep_feat_cache/
 dist/
@@ -16,7 +16,18 @@ dist/
 runs/
 wandb/
 
-# Annotation results are precious -> NOT ignored (kept in repo): annotations/
+# Annotation results are kept in the repo (the extra labelled data): annotations/
+
+# Slides / presentation are published on the e-learning course, not in the repo
+docs/*.pptx
+docs/*.pdf
+
+# Local-only notes (kept on disk, not part of the public submission)
+CLAUDE.md
+docs/lernhilfe-praesentation.md
+docs/projekt-komplett-erklaert.md
+docs/source/proposal_decoded.txt
+potentielle_aenderungen/
 
 # Python
 __pycache__/

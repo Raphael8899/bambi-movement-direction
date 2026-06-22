@@ -114,11 +114,11 @@ Flight-disjoint GroupKFold, 5 folds x 3 seeds:
   single-crop motion detection. Modest and proxy-limited - re-check with human labels. See
   [audit.md](audit.md).
 
-## Human-label validation (DONE — full detail in [validation.md](validation.md))
+## Human-label validation (DONE - full detail in [validation.md](validation.md))
 Andreas labelled all 1,500 crops (`annotations/labels.csv`):
 - Human axis vs tracking axis: **~22.7 deg median** (19.1 on human-confirmed movers), Acc@45
   0.79-0.86, vs ~50 deg random → the tracking direction GT is **confirmed**.
-- GST vs the human axis: **~10.7 deg median, Acc@45 0.90** — GST is a good *orientation* estimator;
+- GST vs the human axis: **~10.7 deg median, Acc@45 0.90** - GST is a good *orientation* estimator;
   signed movement direction stays the hard part (GST vs tracking-movement ~29 deg).
 - Head visible only **14 %** of the time (27 % among movers) → confirms the tracking pivot.
 - Moving/stationary on real labels (flight-disjoint): LogReg 0.62, below the 0.78 scene ceiling.

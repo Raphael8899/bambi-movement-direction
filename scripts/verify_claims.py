@@ -109,7 +109,7 @@ if os.path.exists(ls_path):
 
 print("\n" + ("=" * 60))
 if _fail[0] == 0:
-    print("ALL CHECKS PASSED — the documented numbers match the data.")
+    print("ALL CHECKS PASSED - the documented numbers match the data.")
 else:
-    print(f"{_fail[0]} CHECK(S) FAILED — investigate before trusting the docs.")
+    print(f"{_fail[0]} CHECK(S) FAILED - investigate before trusting the docs.")
 sys.exit(1 if _fail[0] else 0)

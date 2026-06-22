@@ -3,8 +3,8 @@
 Single source of truth. Read this first; it tells a fresh reader (or a fresh session) what the
 project is, why, what was decided, what is actually true so far, and where everything lives.
 
-Read order: this file -> `source/assignment.md` (the brief) + `source/proposal_decoded.txt` (our
-proposal slides) -> `results.md` (numbers) -> `validation.md` (human-label check) -> `audit.md` (what is overstated and why) ->
+Read order: this file -> `source/assignment.md` (the brief) -> `results.md` (numbers) ->
+`validation.md` (human-label check) -> `audit.md` (what is overstated and why) ->
 `plans/2026-06-19-movement-direction-design.md` (the plan) -> `references.md` (literature).
 
 ## 1. The task
@@ -14,7 +14,7 @@ annotate, and **apply + evaluate + compare** CV methods, then present.
 **Our fixed topic:** estimate the **movement direction** of wildlife in thermal AOS drone imagery.
 Methodology is ours. Full brief + supervisor email facts: `source/assignment.md`.
 
-## 2. Our proposal, in brief (decoded slides in source/proposal_decoded.txt)
+## 2. Our proposal, in brief
 Light-field (AOS) integral images: a stationary animal stays sharp, a moving animal smears in its
 direction of travel. The existing BAMBI pipeline detects animals and classifies moving vs stationary
 but not *which* direction. Proposal: estimate direction in two cases - (a) body orientation of
@@ -80,14 +80,14 @@ machine via the standalone package; species shown as class id, not a guessed nam
   blur_eval.csv, movement_results.csv, eda_stats.csv. `dist/` (gitignored) - the annotation package.
 - `annotations/` - Andreas's `labels.csv` (1,500 crops), kept in git.
 
-## 7. Human-label validation (DONE — see docs/validation.md)
+## 7. Human-label validation (DONE - see docs/validation.md)
 Andreas labelled all 1,500 crops (`annotations/labels.csv`). Outcome (`scripts/validate_labels.py`):
 - **Tracking direction validated:** human axis vs tracking axis ~22.7 deg median (19.1 on
   human-confirmed movers), Acc@45 0.79-0.86, vs ~50 deg random. The tracking GT holds.
-- **Head-discernibility is 14 %** (27 % among movers) — confirms why we use tracking, not hand labels.
+- **Head-discernibility is 14 %** (27 % among movers) - confirms why we use tracking, not hand labels.
 - **GST is a good orientation estimator** vs the human axis (~10.7 deg), but signed movement direction
   stays hard (GST vs tracking-movement ~29 deg).
-- **Moving/stationary on real labels** (flight-disjoint): LogReg 0.62, below the 0.78 scene ceiling —
+- **Moving/stationary on real labels** (flight-disjoint): LogReg 0.62, below the 0.78 scene ceiling -
   same conclusion as the proxy. No part of the pipeline had to be redesigned.
 
 Still open: an optional direction-regression DL arm (data-limited), then the written report.

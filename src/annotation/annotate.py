@@ -157,7 +157,7 @@ class App:
         before = self.store.index
         self.store.advance()
         if self.store.index == before:
-            self.status.config(text="last crop reached — Esc to save & quit", fg=GOOD)
+            self.status.config(text="last crop reached - Esc to save & quit", fg=GOOD)
         self.refresh()
 
     def _quit(self, event=None):
@@ -180,13 +180,13 @@ class App:
         self._update_elapsed()
 
         lab = self.store.label()
-        motion = lab["motion_state"] or "—"
+        motion = lab["motion_state"] or "-"
         dcls = lab["direction_class"]
-        dname = ls.COMPASS_NAMES.get(dcls, "—") if dcls is not None else "—"
+        dname = ls.COMPASS_NAMES.get(dcls, "-") if dcls is not None else "-"
         self.selection.config(text=f"crop: {cid}\nclass: {sp}\n\nmotion:    {motion}\ndirection: {dname}")
 
         if self.store.is_complete():
-            self.status.config(text="complete — Enter/Space for next", fg=GOOD)
+            self.status.config(text="complete - Enter/Space for next", fg=GOOD)
             self.missing.config(text="")
         else:
             self.status.config(text="incomplete", fg=WARN)

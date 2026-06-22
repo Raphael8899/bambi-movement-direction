@@ -1,7 +1,7 @@
 # Assignment and source facts
 
 The original inputs the project is built on. Kept verbatim-in-substance so a fresh reader has the
-real brief. The decoded proposal slides are in `proposal_decoded.txt`.
+real brief.
 
 ## Course assignment (Computer Vision, FH Hagenberg)
 - Grade = 50% group project + 50% written exam (~1 h, after the final session).

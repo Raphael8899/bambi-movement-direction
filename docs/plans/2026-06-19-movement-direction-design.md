@@ -1,7 +1,7 @@
-# BAMBI — Movement Direction Estimation · Master Design
+# BAMBI - Movement Direction Estimation · Master Design
 
 **Course:** Computer Vision (FH Hagenberg). **Team:** Raphael & Andreas (2 people).
-**Grading weight:** 50 % project. **Effort:** ~40–50 h/student. **Deliverables:** presentation + report + reproducible code repo.
+**Grading weight:** 50 % project. **Effort:** ~40-50 h/student. **Deliverables:** presentation + report + reproducible code repo.
 **Date:** 2026-06-19. **Status:** approved (scope, methods, decisions).
 
 > Research question (fixed by proposal): *Can we determine the movement direction of wildlife
@@ -26,12 +26,12 @@ After Andreas trialled the annotation tool, two things changed from the original
 - **Label schema:** 8 directional classes (45° sectors) **+ "axis-only / unsure" escape** + moving/stationary flag.
 - **Species focus:** start with **Rotwild (red deer)** for deep-learning depth; classical methods on all 3.
 - **Annotation budget:** ≤ **5 h** of Raphael's time → lean on tracking pseudo-GT + fast custom tool.
-- **Start:** build P0–P2 autonomously, notify when feasibility batch is ready.
+- **Start:** build P0-P2 autonomously, notify when feasibility batch is ready.
 
 ## Empirical ground truth about the data (verified, not assumed)
 - Roboflow `bambi-overview/bambi-alfs-20250520-upload04-sdakr` v2; **2048×2048**; **12,655 imgs / 46,046 boxes**
   (Rotwild 21,787 / Rehwild 17,403 / Schwarzwild 6,856); **223 flight ids (221 with boxes) × ~65 frames**.
-- Crop longest-side **median 65 px** (only 2.6 % < 32 px) → orientation feasible (proposal's "20–40 px" was wrong).
+- Crop longest-side **median 65 px** (only 2.6 % < 32 px) → orientation feasible (proposal's "20-40 px" was wrong).
 - **94 %** of warm blobs have a clear elongation axis → body/blur **axis (mod 180°)** recoverable even classically.
 - **No drone GPS/pose metadata** in the export → ego-motion must be image-based; proposal's "combine with GPS" dropped.
 - Cross-frame displacement is dominated by **drone survey ego-motion** (rectangular trajectories) → tracking needs
@@ -47,8 +47,8 @@ honest evaluation**. Anchored in the supervisors' own group: **IAOS** (Nathan, K
 arXiv:2207.13344) explicitly frames moving targets as directional motion blur in AOS integrals.
 
 Two sub-tasks:
-- **Branch S** — stationary animals → body orientation (axis primary; head/tail stretch).
-- **Branch M** — moving animals → motion-blur direction (axis primary; sign via tracking/thermal asymmetry).
+- **Branch S** - stationary animals → body orientation (axis primary; head/tail stretch).
+- **Branch M** - moving animals → motion-blur direction (axis primary; sign via tracking/thermal asymmetry).
 
 ## Method bake-off (identical flight-disjoint splits, matched budgets, multi-seed)
 | Family | Branch S | Branch M | Role |
@@ -57,12 +57,12 @@ Two sub-tasks:
 | Classical ML | hand features (Hu, HOG, elongation, intensity profile) → SVM/RF (8 bins) | blur-length/coherence → moving/stationary RF | M/S classifier + bin classification |
 | CNN from scratch | small CNN, 1-ch stem, **biternion** (cos2θ,sin2θ) + **von Mises loss** | axis + optional length | "no-pretraining" arm (often strong on thermal) |
 | Transfer | ImageNet CNN partial fine-tune; **frozen DINOv2 + head** | dito | tests if RGB priors help |
-| Foundation model | **BioCLIP/CLIP zero-shot = negative control** | — | quantifies domain gap |
+| Foundation model | **BioCLIP/CLIP zero-shot = negative control** | - | quantifies domain gap |
 
 **Moving/Stationary classifier (rebuilt):** GST elongation/coherence + inner-vs-surround sharpness (animal-specific) +
 blur length; validated against human labels (unsupervised vs supervised comparison).
 
-## Ground-truth strategy (no GPS collars) — revised after the feasibility pivot
+## Ground-truth strategy (no GPS collars) - revised after the feasibility pivot
 1. **Tracking displacement = primary direction GT** for moving animals (Rayleigh-filtered, after
    ego-motion registration). Hand-labelling direction proved unreliable (see Status updates above), so
    the original "gold human labels = primary" plan was dropped.
@@ -75,7 +75,7 @@ blur length; validated against human labels (unsupervised vs supervised comparis
 - Metrics: MAE/median/RMSE/P90; **Acc@{10,22.5,45}°**; **flip-corrected** (axis vs sign). Stratify by motion×species×size.
 - Mandatory baselines: uniform-random, constant-mean (after Rayleigh), **permutation test** p-values.
 - **Flight-disjoint splits** (no leakage); **block-bootstrap CIs at flight level**.
-- Tracking agreement: Jammalamadaka–Sarma circular correlation + permutation p + Bland-Altman (moving subset only).
+- Tracking agreement: Jammalamadaka-Sarma circular correlation + permutation p + Bland-Altman (moving subset only).
 
 ## Tracking branch (sign + validation)
 Per flight: image-based registration (ORB/LK + RANSAC **partial-affine / similarity**) → SORT with **centroid/Kalman-predicted** gating
@@ -95,7 +95,7 @@ Per flight: image-based registration (ORB/LK + RANSAC **partial-affine / similar
 | ghosting/quality | quality filter; report retained fraction |
 
 ## Phase plan (semester)
-P0 setup · P1 BB-refinement+quality+crops · P2 annotation tool + **feasibility batch (~100–150, Raphael ~0.5 h)** ·
+P0 setup · P1 BB-refinement+quality+crops · P2 annotation tool + **feasibility batch (~100-150, Raphael ~0.5 h)** ·
 P3 M/S + classical branches · P4 **validation set (~1,500, Andreas)** · P5 DL bake-off · P6 tracking+sign ·
 P7 evaluation/stats · P8 report + presentation.
 
@@ -112,10 +112,10 @@ TDD for the core math (circular stats, GST, registration, metrics); fixed seeds 
 the independent model variants in the bake-off run as separate jobs.
 
 ## Key references
-- IAOS — Nathan, Kurmi, Bimber, *Drones* 2022 (arXiv:2207.13344)
-- Through-Foliage Tracking with AOS — Nathan et al., *J. Remote Sensing* 2022 (arXiv:2111.06959)
-- Thermal AOS — Kurmi, Schedl, Bimber, *Remote Sensing* 2019 (MDPI 11/14/1668)
-- Biternion Nets — Beyer et al., GCPR 2015 · Deep Directional Statistics — Prokudin et al., ECCV 2018
-- Circular Smooth Label — Yang & Yan, ECCV 2020 · GWD loss — Yang et al., ICML 2021
-- Drone-thermal wildlife detection benchmark — arXiv:2310.11257 · BioCLIP camera-trap failure — Springer 2025
+- IAOS - Nathan, Kurmi, Bimber, *Drones* 2022 (arXiv:2207.13344)
+- Through-Foliage Tracking with AOS - Nathan et al., *J. Remote Sensing* 2022 (arXiv:2111.06959)
+- Thermal AOS - Kurmi, Schedl, Bimber, *Remote Sensing* 2019 (MDPI 11/14/1668)
+- Biternion Nets - Beyer et al., GCPR 2015 · Deep Directional Statistics - Prokudin et al., ECCV 2018
+- Circular Smooth Label - Yang & Yan, ECCV 2020 · GWD loss - Yang et al., ICML 2021
+- Drone-thermal wildlife detection benchmark - arXiv:2310.11257 · BioCLIP camera-trap failure - Springer 2025
 - Full annotated bibliography: `docs/references.md` (to be written in P7).
