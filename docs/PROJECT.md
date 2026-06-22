@@ -4,7 +4,7 @@ Single source of truth. Read this first; it tells a fresh reader (or a fresh ses
 project is, why, what was decided, what is actually true so far, and where everything lives.
 
 Read order: this file -> `source/assignment.md` (the brief) + `source/proposal_decoded.txt` (our
-proposal slides) -> `results.md` (numbers) -> `audit.md` (what is overstated and why) ->
+proposal slides) -> `results.md` (numbers) -> `validation.md` (human-label check) -> `audit.md` (what is overstated and why) ->
 `plans/2026-06-19-movement-direction-design.md` (the plan) -> `references.md` (literature).
 
 ## 1. The task
@@ -80,12 +80,18 @@ machine via the standalone package; species shown as class id, not a guessed nam
   blur_eval.csv, movement_results.csv, eda_stats.csv. `dist/` (gitignored) - the annotation package.
 - `annotations/` - where Andreas's `labels.csv` will go (kept in git).
 
-## 7. Pending (needs Andreas's labels.csv)
-1. Validate the tracking direction against human perception; report the head-discernibility rate.
-2. Re-run the moving/stationary and direction evaluations on real labels (not the tracking proxy).
-3. A direction-regression deep-learning arm trained on labels + tracking, flight-disjoint.
-4. Then the written report + the final presentation.
+## 7. Human-label validation (DONE — see docs/validation.md)
+Andreas labelled all 1,500 crops (`annotations/labels.csv`). Outcome (`scripts/validate_labels.py`):
+- **Tracking direction validated:** human axis vs tracking axis ~22.7 deg median (19.1 on
+  human-confirmed movers), Acc@45 0.79-0.86, vs ~50 deg random. The tracking GT holds.
+- **Head-discernibility is 14 %** (27 % among movers) — confirms why we use tracking, not hand labels.
+- **GST is a good orientation estimator** vs the human axis (~10.7 deg), but signed movement direction
+  stays hard (GST vs tracking-movement ~29 deg).
+- **Moving/stationary on real labels** (flight-disjoint): LogReg 0.62, below the 0.78 scene ceiling —
+  same conclusion as the proxy. No part of the pipeline had to be redesigned.
+
+Still open: an optional direction-regression DL arm (data-limited), then the written report.
 
 ## 8. Status
-Annotation package delivered to Andreas; he is labelling. Label-free pipeline + evaluation +
-self-audit complete and committed. Next action begins when `labels.csv` arrives.
+Label-free pipeline + evaluation + self-audit complete; **human labels received and the tracking
+ground truth is validated** (docs/validation.md). Remaining: optional DL direction arm + the report.

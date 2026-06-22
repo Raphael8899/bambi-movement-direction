@@ -81,6 +81,18 @@ for fam, exp in [("frozen_bioclip", 0.64), ("frozen_dinov2", 0.63), ("frozen_cli
                  ("hand_randomforest", 0.58), ("cnn_scratch", 0.50), ("majority_baseline", 0.50)]:
     check(f"{fam} balanced acc", round(mr.loc[fam, "balanced_acc"], 2), exp, tol=0.015)
 
+lv_path = f"{OUT}/label_validation.csv"
+if os.path.exists(lv_path):
+    print("\n=== HUMAN-LABEL VALIDATION (from output/label_validation.csv) ===")
+    lv = pd.read_csv(lv_path)
+    for c in ("has_axis", "has_head", "trusted", "moving_human"):
+        lv[c] = lv[c].astype(str).isin(("True", "1", "1.0"))
+    link = lv[lv.trusted & lv.has_axis & lv.axis_err_vs_tracking.notna()]
+    check("linchpin: human-vs-tracking axis median (~22.7)", round(link.axis_err_vs_tracking.median(), 1), 22.7, tol=0.6)
+    gv = lv[lv.has_axis & lv.gst_err_vs_human.notna()]
+    check("GST vs human axis median (~10.7)", round(gv.gst_err_vs_human.median(), 1), 10.7, tol=0.8)
+    check("head-discernibility rate (~0.14)", round(lv.has_head.mean(), 2), 0.14, tol=0.02)
+
 print("\n" + ("=" * 60))
 if _fail[0] == 0:
     print("ALL CHECKS PASSED — the documented numbers match the data.")
