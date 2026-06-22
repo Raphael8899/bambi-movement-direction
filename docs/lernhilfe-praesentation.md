@@ -26,7 +26,7 @@ Foundation) → **ehrliche Evaluation**.
 3. Für die Richtung gibt es **keine Ground Truth**, also holen wir sie aus **Tracking** (Drohne rausrechnen → Restbewegung).
 4. Darauf **vergleichen** wir klassische, CNN- und Foundation-Methoden — leckagefrei und mit fairen Baselines.
 5. Ergebnis: Tracking **funktioniert** (138 verlässliche Richtungen), Einzelbild-Richtung ist **schwach**, kein Modell klar überlegen.
-6. Der Wert ist die **Methodik + ehrliche Analyse**, nicht ein Top-Score; menschliche Labels **validieren** am Ende.
+6. Der Wert ist die **Methodik + ehrliche Analyse**, nicht ein Top-Score; und Andreas' 1500 Labels haben das Tracking **bestätigt** (Mensch vs. Tracking ~20°).
 
 ---
 
@@ -222,7 +222,7 @@ vs. 16°). → **Einzelbild-Richtung ist schwach**, Tracking bleibt die bessere 
 **Frage/Zweck:** erkennt ein Modell aus **einem** Crop bewegt (verschmiert) vs. steht (scharf)? Das ist der
 „CV-Methoden anwenden und **vergleichen**"-Teil der Kursaufgabe.
 **Labels:** **Proxy-Labels** aus dem Tracking (bewegt = verlässlicher Track, steht = kaum verschoben). „Proxy"
-= Ersatz, teils zirkulär mit dem Tracker → später mit menschlichen Labels gegenprüfen.
+= Ersatz, teils zirkulär mit dem Tracker; mit Andreas' echten Labels gegengeprüft → LogReg 0,62 (gleiches Bild).
 **Vier Familien (und wie sie funktionieren):**
 1. **Klassische Hand-Features + ML.** „Hand-Features" = 6 selbst berechnete Zahlen pro Crop (GST-Coherence,
    Länglichkeit, Schärfe innen vs. außen, Unschärfe-Länge, Kontrast zum Umfeld, Größe). Darauf:
@@ -282,6 +282,20 @@ als sie sind.
 - **bewegt/steht:** Foundation leicht vorne (~0,63), aber nicht klar besser als klassisch, teils Szenen-Effekt.
 - **Kernbeitrag:** neue Ground-Truth-Idee (Tracking) + fairer Methodenvergleich + ehrliche Auswertung.
 
+# TEIL B+ — Validierung mit Andreas' 1500 Labels (jetzt da!)
+- **Tracking bestätigt (der Beweis):** wo das Tracking eine Richtung traut UND der Mensch eine Linie sieht,
+  stimmen die Achsen auf **~22,7° Median** überein (19,1° bei klar Bewegten), Acc@45 0,79–0,86 — gegen ~50°
+  bei Zufall. Wo der Mensch den Kopf angab, war das Tracking-Vorzeichen 100 % korrekt. → die Wahrheit hält.
+- **GST trifft die menschliche Achse sehr gut** (~10,7° Median, Acc@45 0,90, n=963): GST ist ein guter
+  *Orientierungs*-Schätzer; nur die *gerichtete* Bewegung (mit Kopf) bleibt schwer.
+- **Kopf nur 14 % sichtbar** (27 % bei Bewegten) — bestätigt genau, warum die Richtung aus Tracking kommt.
+- **bewegt/steht auf ECHTEN Labels:** LogReg **0,62** (vorher Proxy 0,62–0,64) — gleiches Bild, jetzt bestätigt.
+- **Konvention-Falle gemeistert:** Tool-Winkel (0=oben) vs. Tracking (0=Osten) → −90° umrechnen, sonst 67°
+  statt 22,7° — der Check beweist, dass die Übereinstimmung echt ist.
+- **Bewegungsstufen datengetrieben auf 2 reduziert:** die 4 Stufen sind kein Signal (strong nur 2×;
+  slight-vs-stärker = Zufall 0,52) → **steht / bewegt + unsicher**; alte Labels werden automatisch gemappt.
+- **Verdikt:** die Labels **bestätigen** das Projekt — nichts musste neu gebaut werden.
+
 # TEIL C — Was schiefging und wie wir es lösten (Failures → Fixes)
 *Erzähl 2–3 davon aktiv — das klingt nach echter eigener Arbeit.*
 1. **Hand-Labeln der Richtung unzuverlässig** → **Pivot zu Tracking**.
@@ -319,7 +333,7 @@ als sie sind.
 | 10 | 2:00 | Methodenvergleich | klassisch vs CNN vs Foundation → kein klarer Sieger. |
 | 11 | 1:00 | Evaluation | flight-disjoint + Baselines + Szenen-Decke 0,84. |
 | 12 | 1:30 | Ergebnisse + Grenzen | 138 Richtungen; ID-Switch als Hauptcaveat. |
-| 13 | 1:00 | Fazit + Ausblick | Beitrag + nächster Schritt (menschliche Labels). |
+| 13 | 1:00 | Fazit + Ausblick | Beitrag + Validierung bestätigt (~20°); nächster Schritt: Report. |
 
 # TEIL F — Fragen & Antworten (Ich-Form, ohne Formeln)
 - **Welche Tools?** Python, OpenCV (klassische CV), scikit-learn (ML + Splits), PyTorch/timm/open_clip (DL).
@@ -353,8 +367,13 @@ als sie sind.
   Menschen labeln nur eine **kleine Validierungsmenge**.
 - **Ist Tracking-GT + Klassifikation nicht zirkulär?** Die Tracking-GT ist Geometrie; die Klassifikation nutzt
   nur Bild-Features; und am Ende validiert der Mensch unabhängig. Die Proxy-Label-Zirkularität benennen wir offen.
-- **Was, wenn die menschlichen Labels dem Tracking widersprechen?** Das ist ein **Befund** (ID-Switch /
-  Erkennbarkeit), kein Neustart — wir prüfen zuerst die sauberen Einzeltier-Fälle; stimmen die, ist die GT solide.
+- **Wie habt ihr validiert (und was kam raus)?** Andreas hat 1500 Crops gelabelt. Mensch-Achse vs.
+  Tracking-Achse: **~22,7° Median** (19,1° bei klar Bewegten), Acc@45 0,79–0,86 vs. ~50° Zufall → die
+  Tracking-Wahrheit ist **bestätigt**. Kopf nur 14 % sichtbar. (Konventions-Fix: −90° umrechnen.)
+- **Was, wenn die Labels widersprochen hätten?** Wäre ein **Befund** gewesen (ID-Switch/Erkennbarkeit), kein
+  Neustart — wir hätten zuerst die sauberen Einzeltier-Fälle geprüft. Sie haben aber **bestätigt**.
+- **Warum nur 2 Bewegungsstufen?** Die 4 Stufen sind kein Signal: „strong" nur 2×, und slight-vs-stärker ist
+  aus einem Crop **Zufall (0,52)**. Nur **steht vs. bewegt** ist lernbar (0,62) → wir mergen auf 2 + unsicher.
 
 # TEIL G — Mini-Glossar (Spickzettel)
 - **AOS / Lichtfeld / Integralbild:** viele ausgerichtete Drohnen-Frames überlagert; „sieht durch Laub".
