@@ -11,9 +11,8 @@ The hard part: there is no ground truth for direction, because the head is almos
 small, blurry warm blobs. Our central idea is to take the truth from motion over time rather than from a
 single image. We track each animal across the frames of a flight, register consecutive frames to remove
 the drone's ego-motion, and the animal's residual displacement is its heading. This tracking-derived
-heading is our ground truth. On top of that, as the assignment asks, we apply, evaluate and **compare**
-several computer-vision method families under a leakage-free, flight-disjoint, circular-statistics
-protocol. We hand-labelled 1,500 crops as an independent **validation** set, not as the truth.
+heading is our ground truth. On top of that we tried several computer-vision approaches and recorded how
+well they do, under a leakage-free, flight-disjoint, circular-statistics protocol. We hand-labelled 1,500 crops as an independent **validation** set, not as the truth.
 
 ## Key results (all reproducible from the committed result tables)
 
