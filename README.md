@@ -72,6 +72,12 @@ dataset in YOLO format; we did not train a detector. The only data we added is t
   clockwise; see `docs/validation.md` for the conversion to the tracking frame).
 - `annotator`, `timestamp_iso`.
 
+For full traceability, `annotations/labels_metadata.csv` joins every `crop_id` to its exact image file
+and bounding box (`image_file`, `cls`, and the YOLO box `xc, yc, w, h` at 2048x2048), so each label maps
+to the original image and box - and the crop can be regenerated - without re-deriving anything. Image
+filenames follow the pattern `{flight}_{frame}_jpg.rf.<hash>.jpg`. The crop images themselves are not
+uploaded (they are derived from the public Roboflow images linked above).
+
 The class ids 0/1/2 are the dataset's own labels; the species names (red deer / roe deer / wild boar)
 are an unverified assumption and are not relied on anywhere in the analysis - everything uses the class id.
 
