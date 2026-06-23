@@ -115,4 +115,5 @@ high-confidence, (b) the ID-switch confound spans the whole crowded core (median
 animals/frame), not just 18 tracklets, (c) the movement experiment's bar
 is scene-structure, not 0.50, and (d) the eye-catching "~290x signal/noise" was a unit error - the
 real separation is ~30-40x net / ~3x per step. None of these flip a headline, but they make the
-honest story narrower and the numbers exact. Final validation still waits on Andreas's human labels.
+honest story narrower and the numbers exact. The manual-label validation later confirmed these
+corrections (see validation.md).

@@ -3,7 +3,7 @@
 Run it from the folder that holds manifest.csv and the crops:
 
     python annotate.py                       # uses ./manifest.csv and ./labels.csv
-    python annotate.py manifest.csv out.csv andreas
+    python annotate.py manifest.csv out.csv <annotator>
 
 Keys
     direction:
@@ -273,7 +273,7 @@ def main(argv):
     here = os.path.dirname(os.path.abspath(__file__))
     manifest = argv[1] if len(argv) > 1 else os.path.join(here, "manifest.csv")
     labels = argv[2] if len(argv) > 2 else os.path.join(here, "labels.csv")
-    annotator = argv[3] if len(argv) > 3 else "andreas"
+    annotator = argv[3] if len(argv) > 3 else "team"
 
     if not os.path.exists(manifest):
         print(f"manifest not found: {manifest}", file=sys.stderr)

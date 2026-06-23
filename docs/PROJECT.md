@@ -1,97 +1,84 @@
-# BAMBI Movement Direction Estimation - project ground truth
+# BAMBI Movement Direction Estimation - project documentation
 
-Single source of truth. Read this first; it tells a fresh reader (or a fresh session) what the
-project is, why, what was decided, what is actually true so far, and where everything lives.
-
-Read order: this file -> `source/assignment.md` (the brief) -> `results.md` (numbers) ->
-`validation.md` (human-label check) -> `audit.md` (what is overstated and why) ->
-`plans/2026-06-19-movement-direction-design.md` (the plan) -> `references.md` (literature).
+Technical overview of the project: the task, the dataset, the approach, the results, and how to
+reproduce them. The headline numbers here are all recomputed from the committed result tables in
+`output/` (see `results.md`, `validation.md`, and the critical self-review in `audit.md`).
 
 ## 1. The task
-University Computer Vision project (FH Hagenberg), 50% of the grade, team of 2 (Raphael + Andreas),
-~40-50 h/student. Based on the BAMBI thermal light-field drone wildlife data. We must preprocess,
-annotate, and **apply + evaluate + compare** CV methods, then present.
-**Our fixed topic:** estimate the **movement direction** of wildlife in thermal AOS drone imagery.
-Methodology is ours. Full brief + supervisor email facts: `source/assignment.md`.
+A Computer Vision course project at FH Hagenberg, based on the BAMBI thermal light-field drone wildlife
+data. The work covers preprocessing, annotation, and applying, evaluating and comparing computer-vision
+methods. Our chosen topic: estimate the **movement direction (heading)** of wildlife in thermal
+Airborne Optical Sectioning (AOS) drone imagery. Detection and a moving/stationary call already exist in
+BAMBI; the heading is the open question.
 
-## 2. Our proposal, in brief
-Light-field (AOS) integral images: a stationary animal stays sharp, a moving animal smears in its
-direction of travel. The existing BAMBI pipeline detects animals and classifies moving vs stationary
-but not *which* direction. Proposal: estimate direction in two cases - (a) body orientation of
-stationary animals (deep learning), (b) motion-blur direction of moving animals (signal processing) -
-and cross-check with tracking + drone data. Proposal feared 20-40 px crops and no ground truth.
+## 2. The dataset (verified empirically)
+- Roboflow `bambi-overview/bambi-alfs-20250520-upload04-sdakr`, version 2, in YOLO format. The original
+  images are not redistributed here (see "Data" in the README); we add only our own labels.
+- 2048x2048 thermal AOS integral images; 12,655 image files (12,514 with at least one box); 46,046
+  boxes; 223 distinct flight ids (221 with boxes), about 65 frames each.
+- Animal crops are median 65 px on the long side, and 67 % of images contain more than one animal -
+  small, low-contrast, crowded targets.
+- Classes are stored only as ids **0 / 1 / 2** (the data.yaml names them '2' / '3' / '4'). A mapping to
+  red deer / roe deer / wild boar is an unverified assumption and is not relied on; everything uses
+  the class id.
+- The export has no drone GPS or pose; some frames show AOS border ghosting (about 0.9 % flagged).
 
-## 3. The dataset (verified empirically, not assumed)
-- Roboflow `bambi-overview/bambi-alfs-20250520-upload04-sdakr` v2, already downloaded at
-  `C:\Users\rapha\AutoCode\bambi-analysis\data\bambi-dataset` (YOLO format) - reuse, don't re-download.
-- 2048x2048 thermal AOS integrals; 12,655 image files (12,514 with >=1 box); 46,046 boxes; 221 flights
-  with boxes (223 distinct flight ids total)
-  x ~65 frames. Crops are median 65 px (NOT 20-40 as feared). 67% of images have >1 animal.
-- Classes are stored only as ids **0/1/2** (data.yaml names them '2','3','4'). The names
-  Rotwild/Rehwild/Schwarzwild are NOT in the dataset - the id->species map is an unverified
-  assumption from an old project; **confirm it with the BAMBI team.** The tool/manifests show "class N".
-- No drone GPS/pose/telemetry in the export. Some frames have AOS border ghosting (~0.9% flagged).
-- Don't trust the old `C:\Users\rapha\AutoCode\bambi-analysis` repo's results (its own notes admit
-  unvalidated movement labels etc.) - re-derive and validate.
+## 3. The approach
+There is no human-verifiable ground truth for direction: the head is rarely visible on the warm blobs,
+most crops are multi-animal, and hand-labelling direction would just be a second guess. So the **ground
+truth for direction comes from tracking**: register consecutive frames to remove the drone's ego-motion,
+then the animal's residual displacement over the track is its heading. On top of that we apply, evaluate
+and **compare** method families under a leakage-free, flight-disjoint, circular-statistics protocol.
+A set of 1,500 manually labelled crops serves as an independent validation set, not as the ground truth.
 
-## 4. The pivotal methodology decision
-Hand-labelling direction proved unreliable (most animals are faint/compact, head vs tail not visible,
-no human-verifiable ground truth, 67% multi-animal crops). So the **ground truth for direction comes
-from TRACKING**, not human labels: register consecutive frames to remove drone ego-motion, then the
-animal's residual displacement is its real heading. Human annotation (Andreas) shrinks to a **small
-validation set** on clearly-moving, single-animal crops, plus the moving/stationary call.
+Pipeline: AOS data -> classical preprocessing (tighten boxes onto the warm blob) -> tracking (the
+direction ground truth) -> comparison of single-image and learned methods -> evaluation.
 
-Other locked decisions: project is **English**; everything must read **human-written, not AI**
-(no AI-authorship traces, no banner comments / essay docstrings); **Andreas annotates** on his own
-machine via the standalone package; species shown as class id, not a guessed name.
+## 4. Results (label-free core; full detail in results.md, caveats in audit.md)
+- **Tracking recovers a real heading.** Consecutive registration removes the large drone ego-motion and
+  leaves a coherent animal residual; the static background cancels in the per-step difference images.
+  Of 2,697 tracklets, 190 pass the confidence gate, and the defensible high-confidence core is **138**
+  (at least 8 steps and 50 px net displacement). Median registration inlier ratio 0.86.
+- **Single-image direction is weak.** The gradient structure tensor (GST) is the best single-image
+  estimator at 29.1 deg median axial error, but it only barely beats - and on the most common class
+  loses to - a constant per-class-heading prior. It is not a substitute for tracking.
+- **Moving vs stationary from one crop is modest.** Frozen DINOv2 / CLIP / BioCLIP features reach
+  0.62-0.64 balanced accuracy, classical hand features 0.58, a from-scratch CNN 0.50; all sit below the
+  honest scene-structure ceiling (about 0.84), so part of the signal is scene correlation.
+- **EDA:** per-class size and intensity statistics; the low refined-area ratio on class 2 is a
+  segmentation effect on the coolest, lowest-contrast animals, not loose boxes.
 
-## 5. What is actually true so far (label-free; full detail in results.md, caveats in audit.md)
-- **Tracking works.** It recovers genuine movement direction for clearly-moving animals (verified
-  visually on real frames AND by refuting the drone-artefact hypothesis: consecutive registration
-  removes ~800 px of cumulative drone motion and leaves a coherent residual, background cancels in
-  the per-step difference images; honest signal/noise ~30-40x at the net level, ~3x per step - the
-  earlier "~290x" was a unit error, see audit.md). The gate yields 190 "trusted", but it is lenient -
-  the **defensible high-confidence core is 138** (>=8 steps, >=50 px). Caveat: an ID-switch confound
-  across the whole trusted/core set, which lives almost entirely in crowded scenes (median ~7-8
-  same-class animals/frame; only ~3% are single-animal tracks). The tracker has no appearance model,
-  so the R/Rayleigh coherence gate is the only switch defense - not just an issue for the 18 >1000 px
-  tracklets, and the visual ego-motion check used an atypical single-animal flight.
-- **Single-image direction is weak.** GST is the best single-image estimator (~29 deg median axial
-  error) but barely beats - and on the most common class loses to - a constant per-class-heading
-  prior. Not a substitute for tracking.
-- **Moving/stationary classification** (frozen DINOv2/CLIP/BioCLIP vs hand-features vs from-scratch
-  CNN): foundation models edge ahead but are within noise of each other; the proxy labels are
-  flight-clustered (scene leakage), so the result is weak and confounded - re-check with human labels.
-- **EDA:** per-class size/intensity stats done; the boar "refined 0.37" is a segmentation failure on
-  low-contrast boars, not loose boxes.
-- All headline numbers were recomputed from the CSVs; no hallucinations; overstatements corrected.
+## 5. Validation against the manual labels (see validation.md)
+On the 1,500 manually labelled crops:
+- **Tracking direction is confirmed:** human axis vs tracking axis about 22.7 deg median (19.1 on
+  clearly-moving crops), Acc@45 0.79-0.86, versus about 50 deg for chance.
+- **The head is recognisable in only 14 % of crops** (27 % among movers) - the quantitative reason the
+  direction ground truth comes from tracking, not hand labels.
+- **GST matches the human body axis well** (about 10.7 deg), but signed movement direction stays hard.
+- **Moving vs stationary on the real labels** (flight-disjoint): about 0.62 balanced accuracy, below the
+  0.78 scene ceiling - the same conclusion as the proxy labels. No part of the pipeline had to change.
 
-## 6. Repo guide
-- Interpreter (an Application Control policy blocks DLLs under Desktop\, so use this one):
-  `C:/Users/rapha/AutoCode/bambi-analysis/.venv/Scripts/python.exe`. `requirements.txt` reproduces it.
-- `config.py` - paths, dataset coords, class map, constants.
-- `src/` - data_loader, crops, gst, bb_refinement, metrics_circular (circular stats), quality;
-  registration + tracking + direction (tracking GT); blur (single-image axis); movement + deep_features
-  (classification); annotation/ (label_store + annotate tool).
-- `scripts/` - run_tracking[_v2], eval_blur, movement_experiment, eda, ghosting_scan,
-  build_annotation_package (-> dist/bambi_annotation.zip for Andreas).
-- `tests/` - 136 passing. Run: `"<interp>" -m pytest tests/ -q` from the project root.
-- `output/` (gitignored) - CSVs incl. tracking_directions.csv (canonical = v2, 190), _v1 backup,
-  blur_eval.csv, movement_results.csv, eda_stats.csv. `dist/` (gitignored) - the annotation package.
-- `annotations/` - Andreas's `labels.csv` (1,500 crops), kept in git.
+## 6. Honest limitations
+- The tracker is a simple greedy nearest-centroid associator with no appearance model, so in crowded
+  scenes two same-class animals can be swapped mid-track (ID switch). The confidence gate limits this
+  but cannot remove it; this is the main weakness and is stated openly in `audit.md`.
+- Single-image methods recover the body axis but not the head/tail sign (180-degree ambiguity).
+- The class-id-to-species mapping is unverified.
+- The overlap between the trusted tracks and the manual labels is small (n = 56): consistent and clearly
+  above chance, but not a large sample.
 
-## 7. Human-label validation (DONE - see docs/validation.md)
-Andreas labelled all 1,500 crops (`annotations/labels.csv`). Outcome (`scripts/validate_labels.py`):
-- **Tracking direction validated:** human axis vs tracking axis ~22.7 deg median (19.1 on
-  human-confirmed movers), Acc@45 0.79-0.86, vs ~50 deg random. The tracking GT holds.
-- **Head-discernibility is 14 %** (27 % among movers) - confirms why we use tracking, not hand labels.
-- **GST is a good orientation estimator** vs the human axis (~10.7 deg), but signed movement direction
-  stays hard (GST vs tracking-movement ~29 deg).
-- **Moving/stationary on real labels** (flight-disjoint): LogReg 0.62, below the 0.78 scene ceiling -
-  same conclusion as the proxy. No part of the pipeline had to be redesigned.
+## 7. Repository guide
+- `config.py` - paths, dataset coordinates, class map, constants.
+- `src/` - data loading, classical box refinement, crops, GST, blur estimators, circular statistics,
+  image registration, tracking, direction, movement features, and frozen deep features; plus the
+  annotation tool under `annotation/`.
+- `scripts/` - the runnable pipeline steps (EDA, tracking, single-image evaluation, the movement
+  bake-off, label validation, the annotation-package builder) and `verify_claims.py`.
+- `tests/` - unit tests (136 passing): `python -m pytest tests/ -q`.
+- `output/` - the committed result tables (CSV); figures are produced separately, not stored here.
+- `annotations/labels.csv` - the 1,500 manually labelled crops (the added data).
 
-Still open: an optional direction-regression DL arm (data-limited), then the written report.
-
-## 8. Status
-Label-free pipeline + evaluation + self-audit complete; **human labels received and the tracking
-ground truth is validated** (docs/validation.md). Remaining: optional DL direction arm + the report.
+## 8. Reproduce
+Set up the environment (`requirements.txt`), point `BAMBI_DATA_DIR` at the dataset, then run the scripts
+in `scripts/` (details and the run order are in the README). `python scripts/verify_claims.py`
+re-derives every headline number from the committed CSVs without needing the raw images.

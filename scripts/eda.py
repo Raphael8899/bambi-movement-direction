@@ -1,6 +1,6 @@
 """Exploratory data analysis over the thermal AOS wildlife dataset.
 
-Per-class statistics the team asked for - size per species, colour/intensity, and the
+Per-class statistics - size per class, colour/intensity, and the
 effect of tightening the (oversized) manual boxes - plus flight-level counts. Box-level
 stats use every detection; the refine and intensity passes load images, so they run on a
 stratified sample per class. Writes output/eda_stats.csv and output/eda_*.png and prints

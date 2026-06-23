@@ -1,6 +1,6 @@
 # BAMBI: Movement Direction Estimation of Wildlife from Thermal Light-Field Drone Imagery
 
-Computer Vision course project (CVI4IL, FH Hagenberg). Team: Raphael Suchomel and Andreas Ranzmaier.
+Computer Vision course project (CVI4IL, FH Hagenberg).
 
 ## Overview
 
@@ -13,7 +13,7 @@ single image. We track each animal across the frames of a flight, register conse
 the drone's ego-motion, and the animal's residual displacement is its heading. This tracking-derived
 heading is our ground truth. On top of that, as the assignment asks, we apply, evaluate and **compare**
 several computer-vision method families under a leakage-free, flight-disjoint, circular-statistics
-protocol. A teammate hand-labelled 1,500 crops as an independent **validation** set, not as the truth.
+protocol. We hand-labelled 1,500 crops as an independent **validation** set, not as the truth.
 
 ## Key results (all reproducible from the committed result tables)
 
@@ -40,8 +40,8 @@ re-derive every headline number from the committed CSVs.
 - `annotations/labels.csv` the additional labelled data produced in this project.
 - `output/` the result tables (CSV). Figures are intentionally not in the repo (see "Figures and
   presentation").
-- `docs/` documentation: `PROJECT.md` (the single ground-truth doc), `results.md`, `validation.md`,
-  `audit.md` (critical self-review), the design plan, and `references.md`.
+- `docs/` documentation: `PROJECT.md` (project overview), `results.md`, `validation.md`,
+  `audit.md` (critical self-review), and `references.md`.
 - `config.py` paths, dataset coordinates and constants. `requirements.txt` the Python environment.
 
 ## Setup
@@ -74,8 +74,7 @@ dataset in YOLO format; we did not train a detector. The only data we added is t
 - `annotator`, `timestamp_iso`.
 
 The class ids 0/1/2 are the dataset's own labels; the species names (red deer / roe deer / wild boar)
-are an unverified assumption carried over from an earlier project and should be confirmed with the
-BAMBI team.
+are an unverified assumption and are not relied on anywhere in the analysis - everything uses the class id.
 
 ## How to reproduce
 
@@ -124,7 +123,6 @@ are the committed CSVs in `output/`, so every figure can be regenerated and chec
 
 ## Documentation
 
-Start with `docs/PROJECT.md` (the single ground-truth document: task, dataset, decisions, verified
-state, repo guide). Then `docs/results.md` (numbers), `docs/validation.md` (the human-label check),
-`docs/audit.md` (a critical self-review of what could be overstated and why), the design plan, and
-`docs/references.md` (literature).
+Start with `docs/PROJECT.md` (project overview: task, dataset, approach, results, repo guide). Then
+`docs/results.md` (numbers), `docs/validation.md` (the human-label check), `docs/audit.md` (a critical
+self-review of what could be overstated and why), and `docs/references.md` (literature).

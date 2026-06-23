@@ -1,4 +1,4 @@
-"""Validate the tracking-derived direction ground truth against Andreas's human labels.
+"""Validate the tracking-derived direction ground truth against the manual human labels.
 
 This is the final, honest validation: does an independent human agree with the geometry-based
 tracking direction, and how good are the single-image estimators against a human reference?

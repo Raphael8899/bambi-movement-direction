@@ -1,6 +1,6 @@
 # Validation against human labels
 
-Andreas labelled all 1,500 curated crops (`annotations/labels.csv`). This is the independent
+All 1,500 curated crops were manually labelled (`annotations/labels.csv`). This is the independent
 check the whole project was waiting on. `scripts/validate_labels.py` produces every number here
 from the labels + the tracking output + the raw images, writing the per-crop
 `output/label_validation.csv` and the aggregate `output/label_validation_summary.csv`;
@@ -52,7 +52,7 @@ the direction ground truth from tracking instead of from hand labels.** The labe
 premise quantitatively.
 
 ## 4. Moving vs stationary on the REAL labels (flight-disjoint)
-Replacing the weak tracking proxy with Andreas's labels (moving = slight/moderate/strong, n=298;
+Replacing the weak tracking proxy with the manual labels (moving = slight/moderate/strong, n=298;
 stationary n=550; 169 flights):
 
 - LogReg **0.62**, Random Forest 0.58 balanced accuracy; majority 0.50; per-flight-majority
@@ -67,7 +67,7 @@ low-recall** by design - it does not catch every mover, but it is right about di
 it does keep (section 1). That is the correct reading, not a contradiction.
 
 ## 5. How many motion levels? (decided from the data)
-The tool offered four intensity levels; Andreas used **stationary 550 · slight 256 · moderate 40 ·
+The tool offered four intensity levels; the labels used **stationary 550 · slight 256 · moderate 40 ·
 strong 2** (and 652 "unsure" = 43 %). We tested whether the fine levels carry signal:
 - They do **not** track objective tracking displacement (the per-tracklet net displacement is
   ID-switch-confounded and even runs slightly *backwards* across the levels).

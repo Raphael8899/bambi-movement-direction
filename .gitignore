@@ -26,6 +26,7 @@ docs/*.pdf
 CLAUDE.md
 docs/lernhilfe-praesentation.md
 docs/projekt-komplett-erklaert.md
+docs/praesentation-skript.md
 docs/source/proposal_decoded.txt
 potentielle_aenderungen/
 
@@ -45,3 +46,7 @@ venv/
 Thumbs.db
 .vscode/
 .idea/
+
+# Internal planning/source docs (kept local, redundant with README/PROJECT)
+docs/plans/
+docs/source/

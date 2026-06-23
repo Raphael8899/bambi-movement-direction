@@ -1,4 +1,4 @@
-"""Build the annotation package Andreas runs.
+"""Build the standalone annotation package used for manual labelling.
 
 We only keep crops with exactly ONE animal in view (no herds, no neighbours), where the
 animal is clearly warmer than the background. Each saved crop is contrast-stretched and
@@ -126,7 +126,7 @@ def main():
             crop_id = f"{r.split}_{r.flight_id}_{r.frame_num}_{r.line_num}"
             cv2.imwrite(str(PKG / "crops" / f"{crop_id}.png"), render(crop, r, origin))
             # store the dataset CLASS ID (0/1/2), not a species name: the name->id mapping
-            # is unverified (not in the dataset) and must be confirmed with the BAMBI team.
+            # is unverified and not stored in the dataset, so we persist the class id.
             rows.append({"crop_id": crop_id, "file": f"crops/{crop_id}.png", "class_id": str(cls),
                          "flight_id": int(r.flight_id), "frame_num": int(r.frame_num),
                          "orig_long_px": round(float(r.long_px), 1)})

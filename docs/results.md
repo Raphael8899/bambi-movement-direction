@@ -1,6 +1,6 @@
 # Results so far
 
-Status of the label-free part of the project (before Andreas's manual labels arrive). All
+Status of the label-free part of the project (the manual-label validation is in `validation.md`). All
 numbers were recomputed independently from the output CSVs. The objective ground truth is the
 improved tracking output (190 directions); the earlier 164-direction run is kept at
 `output/tracking_directions_v1.csv`.
@@ -9,8 +9,8 @@ improved tracking output (190 directions); the earlier 164-direction run is kept
 - 2048x2048 thermal AOS integrals; 12,655 image files (12,514 with >=1 box), 46,046 boxes;
   classes 0/1/2 with 21,787 / 17,403 / 6,856 boxes; 221 flights with boxes (223 distinct flight ids total) x ~65 frames.
 - Animal crops: median longest side 65 px. 67% of images contain more than one animal (mean 3.7).
-- The dataset only stores a class id (0/1/2); the species names are not in it (confirm the
-  id->species mapping with the BAMBI team).
+- The dataset only stores a class id (0/1/2); the species names are not in it. The id->species
+  mapping is an unverified assumption and is not relied on in the analysis.
 
 ## Per-class statistics (`scripts/eda.py`)
 How oversized the manual boxes are (refined warm-blob area / manual box area) and intensity:
@@ -92,7 +92,7 @@ methods do not replace it.
 
 ## Moving vs stationary from a single crop (`scripts/movement_experiment.py`)
 Weak proxy labels from tracking (moving = trusted directions, stationary = low-displacement
-tracklets; tracker-derived, so partly circular - to be re-checked against human labels).
+tracklets; tracker-derived, so partly circular; cross-checked against the manual labels in validation.md).
 Flight-disjoint GroupKFold, 5 folds x 3 seeds:
 
 | feature family | balanced acc | ROC-AUC |
@@ -111,11 +111,11 @@ Flight-disjoint GroupKFold, 5 folds x 3 seeds:
   (data-limited, not a clean "thermal beats CNNs"). The proxy labels are also flight-clustered
   (per-flight purity 0.89), so the honest bar is the scene structure (~0.84 balanced acc), not the
   0.50 baseline - the models sit below it, so this is partly scene-correlation, not proven
-  single-crop motion detection. Modest and proxy-limited - re-check with human labels. See
+  single-crop motion detection. Modest and proxy-limited; the manual-label re-check (validation.md) reached the same conclusion. See
   [audit.md](audit.md).
 
-## Human-label validation (DONE - full detail in [validation.md](validation.md))
-Andreas labelled all 1,500 crops (`annotations/labels.csv`):
+## Human-label validation (full detail in [validation.md](validation.md))
+We manually labelled all 1,500 crops (`annotations/labels.csv`):
 - Human axis vs tracking axis: **~22.7 deg median** (19.1 on human-confirmed movers), Acc@45
   0.79-0.86, vs ~50 deg random → the tracking direction GT is **confirmed**.
 - GST vs the human axis: **~10.7 deg median, Acc@45 0.90** - GST is a good *orientation* estimator;
@@ -123,4 +123,4 @@ Andreas labelled all 1,500 crops (`annotations/labels.csv`):
 - Head visible only **14 %** of the time (27 % among movers) → confirms the tracking pivot.
 - Moving/stationary on real labels (flight-disjoint): LogReg 0.62, below the 0.78 scene ceiling.
 
-Still open: an optional direction-regression DL arm (data-limited), then the written report.
+Future work: an optional direction-regression deep-learning arm (currently data-limited).

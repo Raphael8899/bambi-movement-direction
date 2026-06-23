@@ -17,7 +17,7 @@ LABEL_COLUMNS = ["crop_id", "motion_state", "direction_class", "direction_deg",
                  "annotator", "timestamp_iso"]
 
 # The tool offers a binary scale + an "unsure" escape: stationary / moving / unsure. The data
-# (Andreas's 1500 labels) showed the finer intensity levels are not distinguishable -- "strong"
+# (the 1,500 manual labels) showed the finer intensity levels are not distinguishable -- "strong"
 # was used twice, and slight-vs-stronger is at chance from a single crop -- so they are merged into
 # "moving". The legacy intensity levels stay valid so older labels.csv files still parse, and
 # merge_motion() collapses them.
@@ -104,7 +104,7 @@ class LabelStore:
     annotator can quit and pick up where they left off.
     """
 
-    def __init__(self, manifest_path, labels_path, annotator="andreas"):
+    def __init__(self, manifest_path, labels_path, annotator="team"):
         self.manifest_path = manifest_path
         self.labels_path = labels_path
         self.annotator = annotator

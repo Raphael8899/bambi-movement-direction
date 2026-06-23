@@ -4,8 +4,8 @@ The question is whether one AOS crop carries enough signal to tell a moving anim
 (motion-smeared) from a stationary one (sharp body). We have no movement labels yet, so
 we borrow weak labels from the tracking output: tracklets the direction pipeline TRUSTED
 are moving, tracklets it left untrusted that also barely displaced are stationary. This
-is proxy supervision and partly circular with the tracker -- to be re-checked against
-human labels later.
+is proxy supervision and partly circular with the tracker; it is cross-checked against the
+manual labels in validation.md (same conclusion).
 
 Hand features (one vector per crop): gst coherence, blob eccentricity, inner-vs-surround
 sharpness, cepstral blur length, contrast-to-surround, size. Axis convention follows
