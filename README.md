@@ -107,9 +107,9 @@ large trained weights to distribute:
 
 ## Figures and presentation
 
-The figures and the slide deck are kept out of this repository on purpose, to be reviewed and published
-separately (the presentation goes to the e-learning course). The numerical results they are built from
-are the committed CSVs in `output/`, so every figure can be regenerated and checked against the data.
+The slide deck is included as `docs/presentation.pptx` (also uploaded to the course e-learning).
+Standalone figures are not stored separately; the numbers they are built from are the committed CSVs in
+`output/`, so every figure can be regenerated and checked against the data.
 
 ## Honesty notes and limitations
 

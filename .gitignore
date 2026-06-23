@@ -18,9 +18,10 @@ wandb/
 
 # Annotation results are kept in the repo (the extra labelled data): annotations/
 
-# Slides / presentation are published on the e-learning course, not in the repo
+# Slide deck: the final submission presentation is included; other local decks/PDFs are not.
 docs/*.pptx
 docs/*.pdf
+!docs/presentation.pptx
 
 # Local-only notes (kept on disk, not part of the public submission)
 CLAUDE.md
